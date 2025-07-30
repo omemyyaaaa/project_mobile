@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/myhome.dart';
+import 'package:flutter_application_1/publicpage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -264,17 +266,25 @@ class _ProfilePageState extends State<ProfilePage> {
   void _onBottomNavTap(int index) {
     switch (index) {
       case 0:
-        // หน้าแรก
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const MyHome(),
+        ),
+      );
         break;
       case 1:
-        // Wi-Fi
-        Navigator.pushReplacementNamed(context, '/wifi');
-        break;
+        Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const Publicpage(),
+        ),
+      );
       case 2:
         // Cloud
-        Navigator.pushReplacementNamed(context, '/cloud');
-        break;
+        Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const ProfilePage(),
+        ),
+      );
       case 3:
         // Profile (หน้าปัจจุบัน)
         break;

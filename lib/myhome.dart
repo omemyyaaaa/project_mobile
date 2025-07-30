@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/profile.dart';
+import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
 import 'package:flutter_application_1/sidebar/sdgbar.dart';
 import 'package:flutter_application_1/sidebar/trickbar.dart';
+import 'package:flutter_application_1/upload.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
@@ -167,10 +169,12 @@ class _MyHomeState extends State<MyHome> {
   // Info card description
   Widget _buildInfoDescription() {
     return const Text(
-      "เป้าหมายการพัฒนาแห่งสหัสวรรษ 17 ข้อ\n"
-      "มิติด้านสังคม เศรษฐกิจ และสิ่งแวดล้อม",
+      "เป้าหมายการพัฒนาทั้ง 17 ข้อ สะท้อน 3 เสาหลักของมิติความยั่งยืน คือ\n"
+      "มิติด้านสังคม เศรษฐกิจ และสิ่งแวดล้อม บวกกับอีก 2 \n"
+      "มิติคือมิติด้านสันติภาพและสถาบันและมิติด้านหุ้นส่วนการพัฒนา\n"
+      "ที่เชื่อมร้อยทุกมิติของความยั่งยืนไว้ด้วยกัน",
       textAlign: TextAlign.center,
-      style: TextStyle(fontSize: 16, height: 1.5),
+      style: TextStyle(fontSize: 12, height: 1.5),
     );
   }
 
@@ -250,20 +254,60 @@ class _MyHomeState extends State<MyHome> {
 
   // Bottom navigation bar
   Widget _buildBottomNavigation() {
-    return BottomNavigationBar(
-      backgroundColor: _bottomNavGreen,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      type: BottomNavigationBarType.fixed,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'หน้าหลัก'),
-        BottomNavigationBarItem(icon: Icon(Icons.flag), label: 'เป้าหมาย'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'โปรไฟล์'),
-      ],
+    return Container(
+      height: 70,
+      color: _primaryGreen,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildBottomNavItem(Icons.home, 0),
+          _buildBottomNavItem(Icons.wifi, 1),
+          _buildBottomNavItem(Icons.cloud_outlined, 2),
+          _buildBottomNavItem(Icons.person, 3),
+        ],
+      ),
     );
   }
+   Widget _buildBottomNavItem(IconData icon, int index) {
+    return IconButton(
+      icon: Icon(
+        icon,
+        color: Colors.black,
+        size: 28,
+      ),
+      onPressed: () {
+        _onBottomNavTap(index);
+      },
+    );
+  }
+  void _onBottomNavTap(int index) {
+  switch (index) {
+    case 0:
+      // myhome(หน้าปัจจุบัน)
+      break;
+    case 1:
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const Publicpage(),
+        ),
+      );
+    case 2:
+      // Cloud
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => UploadPage(),
+        ),
+      );
+    case 3:
+      // Profile
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const ProfilePage(),
+        ),
+      );
+      break;
+  }
+}
 
   // Navigation drawer
   Widget _buildDrawer() {
@@ -384,7 +428,7 @@ class _MyHomeState extends State<MyHome> {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        const SdgBar(), // นำทางไปยัง sdgbar.dart
+                         SDGBar() // นำทางไปยัง sdgbar.dart
                   ),
                 );
               },
