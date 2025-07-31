@@ -146,7 +146,7 @@ class _UploadPageState extends State<UploadPage> {
         backgroundColor: Colors.green.shade700,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -461,11 +461,11 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
                   isExpanded: true,
                   icon: Icon(Icons.keyboard_arrow_down),
                   items: [
-                    'เข้าคาขอ15',
-                    'กิจกรรมการเรียน',
-                    'กิจกรรมกีฬา',
-                    'กิจกรรมสังคม',
-                    'กิจกรรมอื่นๆ',
+                    'เป้าหมายที่1',
+                    'เป้าหมายที่2',
+                    'เป้าหมายที่3',
+                    'เป้าหมายที่4',
+                    'เป้าหมายที่5',
                   ].map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,

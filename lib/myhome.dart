@@ -240,10 +240,11 @@ class _MyHomeState extends State<MyHome> {
         elevation: 4,
       ),
       onPressed: () {
-        // Add navigation to SDG learning page
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('เรียนรู้เกี่ยวกับ SDGs!')),
-        );
+         Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => SDGBar(),
+        ),
+      );
       },
       child: const Text(
         "เรียนรู้เกี่ยวกับ SDGs",

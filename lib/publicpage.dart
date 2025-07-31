@@ -21,7 +21,7 @@ Widget build(BuildContext context) {
       backgroundColor: Colors.green.shade700,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back,  color: Colors.black),
         onPressed: () => Navigator.pop(context),
       ),
     ),

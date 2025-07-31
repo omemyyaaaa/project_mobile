@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/publicpage.dart';
+import 'package:flutter_application_1/upload.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -18,16 +19,25 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _lightGreen,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: _buildProfileContent(),
-            ),
-            _buildBottomNavigation(),
-          ],
+      appBar: AppBar(
+        backgroundColor: _primaryGreen,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(child: _buildProfileContent()),
+          _buildBottomNavigation(),
+        ],
       ),
     );
   }
@@ -42,11 +52,7 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(
-                Icons.menu,
-                color: Colors.black,
-                size: 24,
-              ),
+              icon: const Icon(Icons.menu, color: Colors.black, size: 24),
               onPressed: () {
                 // เปิด drawer หรือกลับไปหน้าก่อน
                 Navigator.of(context).pop();
@@ -54,11 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const Spacer(),
             IconButton(
-              icon: const Icon(
-                Icons.person,
-                color: Colors.black,
-                size: 24,
-              ),
+              icon: const Icon(Icons.person, color: Colors.black, size: 24),
               onPressed: () {
                 // Action สำหรับโปรไฟล์
               },
@@ -112,10 +114,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const Text(
           'ประวัติต่อลาง',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.black54,
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.black54),
         ),
       ],
     );
@@ -129,17 +128,10 @@ class _ProfilePageState extends State<ProfilePage> {
       decoration: BoxDecoration(
         color: Colors.grey[300],
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.grey[400]!,
-          width: 2,
-        ),
+        border: Border.all(color: Colors.grey[400]!, width: 2),
       ),
       child: IconButton(
-        icon: const Icon(
-          Icons.add,
-          size: 40,
-          color: Colors.black54,
-        ),
+        icon: const Icon(Icons.add, size: 40, color: Colors.black54),
         onPressed: () {
           _showImagePickerDialog();
         },
@@ -195,11 +187,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildBottomNavItem(IconData icon, int index) {
     return IconButton(
-      icon: Icon(
-        icon,
-        color: Colors.black,
-        size: 28,
-      ),
+      icon: Icon(icon, color: Colors.black, size: 28),
       onPressed: () {
         _onBottomNavTap(index);
       },
@@ -257,34 +245,26 @@ class _ProfilePageState extends State<ProfilePage> {
     // ไปหน้าแก้ไขโปรไฟล์
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const EditProfilePage(),
-      ),
+      MaterialPageRoute(builder: (context) => const EditProfilePage()),
     );
   }
 
   void _onBottomNavTap(int index) {
     switch (index) {
       case 0:
-        Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const MyHome(),
-        ),
-      );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const MyHome()));
         break;
       case 1:
-        Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const Publicpage(),
-        ),
-      );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const Publicpage()));
       case 2:
         // Cloud
-        Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const ProfilePage(),
-        ),
-      );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => UploadPage()));
       case 3:
         // Profile (หน้าปัจจุบัน)
         break;
@@ -304,10 +284,7 @@ class EditProfilePage extends StatelessWidget {
         backgroundColor: const Color(0xFF4CAF50),
       ),
       body: const Center(
-        child: Text(
-          'หน้าแก้ไขโปรไฟล์',
-          style: TextStyle(fontSize: 24),
-        ),
+        child: Text('หน้าแก้ไขโปรไฟล์', style: TextStyle(fontSize: 24)),
       ),
     );
   }
