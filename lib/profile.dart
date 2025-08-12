@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/custom_bottom_nav.dart';
 import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/upload.dart';
@@ -33,12 +34,8 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(child: _buildProfileContent()),
-          _buildBottomNavigation(),
-        ],
-      ),
+      body:_buildProfileContent(),
+bottomNavigationBar: const CustomBottomNav(currentIndex: 3, onTap: null,),
     );
   }
 
@@ -167,32 +164,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-  // Bottom Navigation
-  Widget _buildBottomNavigation() {
-    return Container(
-      height: 70,
-      color: _primaryGreen,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildBottomNavItem(Icons.home, 0),
-          _buildBottomNavItem(Icons.wifi, 1),
-          _buildBottomNavItem(Icons.cloud_outlined, 2),
-          _buildBottomNavItem(Icons.person, 3),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem(IconData icon, int index) {
-    return IconButton(
-      icon: Icon(icon, color: Colors.black, size: 28),
-      onPressed: () {
-        _onBottomNavTap(index);
-      },
-    );
-  }
+  // Bottom Navigatio
 
   // Functions
   void _showImagePickerDialog() {
@@ -247,28 +219,6 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       MaterialPageRoute(builder: (context) => const EditProfilePage()),
     );
-  }
-
-  void _onBottomNavTap(int index) {
-    switch (index) {
-      case 0:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const MyHome()));
-        break;
-      case 1:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const Publicpage()));
-      case 2:
-        // Cloud
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => UploadPage()));
-      case 3:
-        // Profile (หน้าปัจจุบัน)
-        break;
-    }
   }
 }
 

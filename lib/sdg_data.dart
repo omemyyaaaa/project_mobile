@@ -1,0 +1,177 @@
+  import 'package:flutter/material.dart';
+
+  class SDGData {
+    final int number;
+    final String title;
+    final String subtitle;
+    final Color color;
+    final String backgroundImage;
+    final int activities;
+    final int uploaded;
+
+    const SDGData({
+      required this.number,
+      required this.title,
+      required this.subtitle,
+      required this.color,
+      required this.backgroundImage,
+      required this.activities,
+      required this.uploaded,
+    });
+  }
+
+  const List<SDGData> sdgList = [
+    SDGData(
+      number: 1,
+      title: 'ขจัดความยากจน',
+      subtitle: 'ขจัดความยากจนทุกรูปแบบในทุกที่',
+      color: Color(0xFFE5243B),
+      backgroundImage: 'assets/images/background1.jpg',
+      activities: 10,
+      uploaded: 5,
+    ),
+    SDGData(
+      number: 2,
+      title: 'ขจัดความหิวโหย',
+      subtitle: 'ขจัดความหิวโหยและบรรลุความมั่นคงทางอาหาร',
+      color: Color(0xFFDDA63A),
+      backgroundImage: 'assets/images/background2.jpg',
+      activities: 12,
+      uploaded: 7,
+    ),
+    SDGData(
+      number: 3,
+      title: 'สุขภาพและความเป็นอยู่ที่ดี',
+      subtitle: 'ส่งเสริมสุขภาพและความเป็นอยู่ที่ดีสำหรับทุกคนทุกวัย',
+      color: Color(0xFF4C9F38),
+      backgroundImage: 'assets/images/background3.jpg',
+      activities: 8,
+      uploaded: 3,
+    ),
+    SDGData(
+      number: 4,
+      title: 'การศึกษาที่มีคุณภาพ',
+      subtitle: 'การศึกษาที่เท่าเทียมและมีคุณภาพ',
+      color: Color(0xFFC5192D),
+      backgroundImage: 'assets/images/background4.jpg',
+      activities: 15,
+      uploaded: 10,
+    ),
+    SDGData(
+      number: 5,
+      title: 'ความเท่าเทียมทางเพศ',
+      subtitle: 'บรรลุความเท่าเทียมทางเพศและเสริมพลังให้กับผู้หญิงและเด็กหญิง',
+      color: Color(0xFFFF3A21),
+      backgroundImage: 'assets/images/background5.jpg',
+      activities: 9,
+      uploaded: 6,
+    ),
+    SDGData(
+      number: 6,
+      title: 'น้ำสะอาดและสุขาภิบาล',
+      subtitle: 'การเข้าถึงน้ำสะอาดและสุขาภิบาลสำหรับทุกคน',
+      color: Color(0xFF26BDE2),
+      backgroundImage: 'assets/images/background6.jpg',
+      activities: 11,
+      uploaded: 5,
+    ),
+    SDGData(
+      number: 7,
+      title: 'พลังงานสะอาดที่ราคาไม่แพง',
+      subtitle: 'การเข้าถึงพลังงานสะอาดและราคาไม่แพง',
+      color: Color(0xFFF2B705),
+      backgroundImage: 'assets/images/background7.jpg',
+      activities: 13,
+      uploaded: 8,
+    ),
+    SDGData(
+      number: 8,
+      title: 'งานที่ดีและการเติบโตทางเศรษฐกิจ',
+      subtitle: 'ส่งเสริมการเติบโตทางเศรษฐกิจที่ยั่งยืนและงานที่มีคุณค่า',
+      color: Color(0xFFC43826),
+      backgroundImage: 'assets/images/background8.jpg',
+      activities: 14,
+      uploaded: 9,
+    ),
+    SDGData(
+      number: 9,
+      title: 'อุตสาหกรรม นวัตกรรม และโครงสร้างพื้นฐาน',
+      subtitle: 'ส่งเสริมอุตสาหกรรมที่ยั่งยืนและนวัตกรรม',
+      color: Color(0xFF4A86E8),
+      backgroundImage: 'assets/images/background9.jpg',
+      activities: 7,
+      uploaded: 4,
+    ),
+    SDGData(
+      number: 10,
+      title: 'ลดความเหลื่อมล้ำ',
+      subtitle: 'ลดความเหลื่อมล้ำภายในและระหว่างประเทศ',
+      color: Color(0xFF8A0253),
+      backgroundImage: 'assets/images/background10.jpg',
+      activities: 6,
+      uploaded: 3,
+    ),
+    SDGData(
+      number: 11,
+      title: 'เมืองและชุมชนที่ยั่งยืน',
+      subtitle: 'ทำให้เมืองและชุมชนมีความปลอดภัยและยั่งยืน',
+      color: Color(0xFFFF7A5C),
+      backgroundImage: 'assets/images/background11.jpg',
+      activities: 12,
+      uploaded: 7,
+    ),
+    SDGData(
+      number: 12,
+      title: 'การบริโภคและการผลิตที่ยั่งยืน',
+      subtitle: 'ส่งเสริมการบริโภคและการผลิตอย่างยั่งยืน',
+      color: Color(0xFFBF8B2E),
+      backgroundImage: 'assets/images/background12.jpg',
+      activities: 9,
+      uploaded: 4,
+    ),
+    SDGData(
+      number: 13,
+      title: 'การรับมือการเปลี่ยนแปลงสภาพภูมิอากาศ',
+      subtitle: 'ดำเนินการอย่างเร่งด่วนเพื่อรับมือการเปลี่ยนแปลงสภาพภูมิอากาศ',
+      color: Color(0xFF3F7E44),
+      backgroundImage: 'assets/images/background13.jpg',
+      activities: 10,
+      uploaded: 6,
+    ),
+    SDGData(
+      number: 14,
+      title: 'ชีวิตใต้ทะเล',
+      subtitle: 'อนุรักษ์และใช้ประโยชน์อย่างยั่งยืนจากมหาสมุทร',
+      color: Color(0xFF0A97D9),
+      backgroundImage: 'assets/images/background14.jpg',
+      activities: 8,
+      uploaded: 5,
+    ),
+    SDGData(
+      number: 15,
+      title: 'ชีวิตบนบก',
+      subtitle: 'บริหารจัดการป่าไม้อย่างยั่งยืน',
+      color: Color(0xFF56C02B),
+      backgroundImage: 'assets/images/background15.jpg',
+      activities: 7,
+      uploaded: 4,
+    ),
+    SDGData(
+      number: 16,
+      title: 'สันติภาพ ความยุติธรรม และสถาบันที่เข้มแข็ง',
+      subtitle: 'ส่งเสริมสังคมที่สงบสุขและยุติธรรม',
+      color: Color(0xFF00689D),
+      backgroundImage: 'assets/images/background16.jpg',
+      activities: 11,
+      uploaded: 6,
+    ),
+    SDGData(
+      number: 17,
+      title: 'ความร่วมมือเพื่อเป้าหมาย',
+      subtitle: 'เสริมสร้างความร่วมมือทั่วโลกเพื่อบรรลุเป้าหมาย',
+      color: Color(0xFF19486A),
+      backgroundImage: 'assets/images/background17.jpg',
+      activities: 13,
+      uploaded: 8,
+    ),
+  ];
