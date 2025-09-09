@@ -425,6 +425,8 @@ class SDGItem {
   final String imagePath;
 
   SDGItem(this.number, this.title, this.subtitle, this.color, this.imagePath);
+
+  get description => null;
 }
 
 class SDGDetailPage extends StatelessWidget {
