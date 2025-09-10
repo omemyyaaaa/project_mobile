@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/API/api.dart';
 import 'sdg_data.dart';
 
 class SDGDetailPage extends StatefulWidget {
@@ -18,24 +17,8 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
   @override
   void initState() {
     super.initState();
-    loadIndicators();
   }
 
-  Future<void> loadIndicators() async {
-    try {
-      final data = await SDGApi.fetchIndicatorsByGoal(widget.sdgNumber);
-      setState(() {
-        indicators = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        error = 'ไม่สามารถโหลดข้อมูลตัวชี้วัดได้';
-        isLoading = false;
-      });
-      print('Error loading indicators: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -163,24 +146,6 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                           fullWidth: true),
                       const SizedBox(height: 20),
 
-                      // แสดงข้อมูลตัวชี้วัดที่ดึงจาก API
-                      Expanded(
-                        child: isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : error != null
-                                ? Center(child: Text(error!))
-                                : ListView.builder(
-                                    itemCount: indicators.length,
-                                    itemBuilder: (context, index) {
-                                      final indicator = indicators[index];
-                                      return ListTile(
-                                        title: Text(indicator['indicator'] ?? 'ไม่มีชื่อ'),
-                                        subtitle:
-                                            Text(indicator['shortDefinition'] ?? 'ไม่มีคำอธิบาย'),
-                                      );
-                                    },
-                                  ),
-                      ),
                     ],
                   ),
                 ),

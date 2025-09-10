@@ -35,10 +35,7 @@ class _UploadPageState extends State<UploadPage> {
             SizedBox(height: 20),
             Text(
               'รูปภาพ/วิดีโอ',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
             Row(
@@ -48,10 +45,7 @@ class _UploadPageState extends State<UploadPage> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     'x',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.black,
-                    ),
+                    style: TextStyle(fontSize: 20, color: Colors.black),
                   ),
                 ),
               ],
@@ -94,24 +88,11 @@ class _UploadPageState extends State<UploadPage> {
           Container(
             width: 60,
             height: 60,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 30,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 30),
           ),
           SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.black87)),
         ],
       ),
     );
@@ -132,7 +113,8 @@ class _UploadPageState extends State<UploadPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => UploadDetailsPage(selectedImage: _selectedImage!),
+          builder: (context) =>
+              UploadDetailsPage(selectedImage: _selectedImage!),
         ),
       );
     }
@@ -175,21 +157,18 @@ class _UploadPageState extends State<UploadPage> {
               ],
             ),
             SizedBox(height: 20),
-            
+
             // Status row
             Row(
               children: [
                 Text(
                   '1 รูปภาพ/วิดีโอ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
                 ),
               ],
             ),
             SizedBox(height: 30),
-            
+
             // Upload area
             Container(
               width: double.infinity,
@@ -202,10 +181,7 @@ class _UploadPageState extends State<UploadPage> {
               child: _selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(15),
-                      child: Image.file(
-                        _selectedImage!,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
                     )
                   : InkWell(
                       onTap: _showUploadOptions,
@@ -230,9 +206,9 @@ class _UploadPageState extends State<UploadPage> {
                       ),
                     ),
             ),
-            
+
             Spacer(),
-            
+
             // Action buttons
             Row(
               children: [
@@ -261,8 +237,8 @@ class _UploadPageState extends State<UploadPage> {
                   child: ElevatedButton(
                     onPressed: _selectedImage != null ? _goToNextPage : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _selectedImage != null 
-                          ? Colors.green.shade700 
+                      backgroundColor: _selectedImage != null
+                          ? Colors.green.shade700
                           : Colors.grey.shade400,
                       padding: EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
@@ -300,7 +276,7 @@ class UploadDetailsPage extends StatefulWidget {
 }
 
 class _UploadDetailsPageState extends State<UploadDetailsPage> {
-  String _selectedCategory = 'เข้าคาขอ15';
+  String? _selectedCategory;
   final TextEditingController _descriptionController = TextEditingController();
 
   void _showSuccessDialog() {
@@ -309,9 +285,7 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
       barrierDismissible: false,
       builder: (context) => Dialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
           padding: EdgeInsets.all(40),
           child: Column(
@@ -345,10 +319,7 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
               Text(
                 'รูปภาพของคุณได้ถูกอัปโหลดเรียบร้อยแล้ว',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
               SizedBox(height: 25),
               // Progress indicator
@@ -382,7 +353,7 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
         ),
       ),
     );
-    
+
     // Auto close after 3 seconds
     Future.delayed(Duration(seconds: 3), () {
       Navigator.of(context).pop(); // Close dialog
@@ -429,10 +400,7 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
-                child: Image.file(
-                  widget.selectedImage,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.file(widget.selectedImage, fit: BoxFit.cover),
               ),
             ),
             SizedBox(height: 15),
@@ -457,24 +425,28 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: _selectedCategory,
+                  value: _selectedCategory, // เริ่มเป็น null
+                  hint: Text(
+                    "กรุณาเลือกเป้าหมาย/หมวดหมู่",
+                  ), // ข้อความแสดงตอนยังไม่เลือก
                   isExpanded: true,
                   icon: Icon(Icons.keyboard_arrow_down),
-                  items: [
-                    'เป้าหมายที่1',
-                    'เป้าหมายที่2',
-                    'เป้าหมายที่3',
-                    'เป้าหมายที่4',
-                    'เป้าหมายที่5',
-                  ].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+                  items:
+                      [
+                        'เป้าหมายที่1',
+                        'เป้าหมายที่2',
+                        'เป้าหมายที่3',
+                        'เป้าหมายที่4',
+                        'เป้าหมายที่5',
+                      ].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
                   onChanged: (String? newValue) {
                     setState(() {
-                      _selectedCategory = newValue!;
+                      _selectedCategory = newValue;
                     });
                   },
                 ),
@@ -542,7 +514,8 @@ class _UploadDetailsPageState extends State<UploadDetailsPage> {
                         ? _showSuccessDialog
                         : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _descriptionController.text.trim().isNotEmpty
+                      backgroundColor:
+                          _descriptionController.text.trim().isNotEmpty
                           ? Colors.green.shade700
                           : Colors.grey.shade400,
                       padding: EdgeInsets.symmetric(vertical: 15),
