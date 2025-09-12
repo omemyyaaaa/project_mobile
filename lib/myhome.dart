@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/profile.dart';
 import 'package:flutter_application_1/publicpage.dart';
-import 'package:flutter_application_1/sdgbar.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
+import 'package:flutter_application_1/sdgbar.dart';
 import 'package:flutter_application_1/sidebar/trickbar.dart';
 import 'package:flutter_application_1/upload.dart';
 
