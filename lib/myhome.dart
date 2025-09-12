@@ -240,11 +240,9 @@ class _MyHomeState extends State<MyHome> {
         elevation: 4,
       ),
       onPressed: () {
-         Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => SDGBar(),
-        ),
-      );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => SDGBar()));
       },
       child: const Text(
         "เรียนรู้เกี่ยวกับ SDGs",
@@ -269,46 +267,38 @@ class _MyHomeState extends State<MyHome> {
       ),
     );
   }
-   Widget _buildBottomNavItem(IconData icon, int index) {
+
+  Widget _buildBottomNavItem(IconData icon, int index) {
     return IconButton(
-      icon: Icon(
-        icon,
-        color: Colors.black,
-        size: 28,
-      ),
+      icon: Icon(icon, color: Colors.black, size: 28),
       onPressed: () {
         _onBottomNavTap(index);
       },
     );
   }
+
   void _onBottomNavTap(int index) {
-  switch (index) {
-    case 0:
-      // myhome(หน้าปัจจุบัน)
-      break;
-    case 1:
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const Publicpage(),
-        ),
-      );
-    case 2:
-      // Cloud
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => UploadPage(),
-        ),
-      );
-    case 3:
-      // Profile
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const ProfilePage(),
-        ),
-      );
-      break;
+    switch (index) {
+      case 0:
+        // myhome(หน้าปัจจุบัน)
+        break;
+      case 1:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const Publicpage()));
+      case 2:
+        // Cloud
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => UploadPage()));
+      case 3:
+        // Profile
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const ProfilePage()));
+        break;
+    }
   }
-}
 
   // Navigation drawer
   Widget _buildDrawer() {
@@ -357,32 +347,26 @@ class _MyHomeState extends State<MyHome> {
 
   // Profile avatar
   Widget _buildProfileAvatar() {
-  return GestureDetector(
-    onTap: () {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const ProfilePage(),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const ProfilePage()));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-      );
-    },
-    child: Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        child: const Icon(Icons.person, color: Colors.grey, size: 40),
       ),
-      child: const Icon(Icons.person, color: Colors.grey, size: 32),
-    ),
-  );
-}
+    );
+  }
 
   // Profile information
   Widget _buildProfileInfo() {
@@ -428,8 +412,7 @@ class _MyHomeState extends State<MyHome> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                         SDGBar() // นำทางไปยัง sdgbar.dart
+                    builder: (context) => SDGBar(), // นำทางไปยัง sdgbar.dart
                   ),
                 );
               },
