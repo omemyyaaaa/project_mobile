@@ -15,31 +15,31 @@ class CustomBottomNav extends StatelessWidget {
   static const Color _primaryGreen = Color(0xFF4CAF50);
 
   void _onBottomNavTap(BuildContext context, int index) {
-    if (index == currentIndex) return; // ไม่ทำอะไรถ้ากดซ้ำ
+  if (index == currentIndex) return;
 
-    Widget page;
-    switch (index) {
-      case 0:
-        page = const MyHome();
-        break;
-      case 1:
-        page = const Publicpage();
-        break;
-      case 2:
-        page = UploadPage();
-        break;
-      case 3:
-        page = const ProfilePage();
-        break;
-      default:
-        return;
-    }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => page),
-    );
+  Widget page;
+  switch (index) {
+    case 0:
+      page = const MyHome();
+      break;
+    case 1:
+      page = const Publicpage();
+      break;
+    case 2:
+      page = UploadPage();
+      break;
+    case 3:
+      page = const ProfilePage();
+      break;
+    default:
+      return;
   }
 
+  // ใช้ push แทน pushReplacement
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => page),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Container(

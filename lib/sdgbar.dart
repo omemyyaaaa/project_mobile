@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/custom_bottom_nav.dart';
+import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/sdg_detail.dart' show SDGDetailPage;
 
 void main() => runApp(SDGBar());
@@ -7,7 +8,10 @@ void main() => runApp(SDGBar());
 class SDGBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: SDGScreen(), debugShowCheckedModeBanner: false);
+    return MaterialApp(
+      home: SDGScreen(),
+      debugShowCheckedModeBanner: false,
+    );
   }
 }
 
@@ -34,12 +38,21 @@ class _SDGScreenState extends State<SDGScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEFFFCC),
+
+      // AppBar พร้อมลูกศรกลับ
       appBar: AppBar(
         backgroundColor: const Color(0xFF1C6B2D),
+        leading: IconButton(
+  icon: const Icon(Icons.arrow_back, color: Colors.white),
+  onPressed: () {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MyHome()),
+    );
+  },
+),
         title: Row(
           children: const [
-            Icon(Icons.menu, color: Colors.white),
-            SizedBox(width: 10),
             Text(
               '17 SDGs',
               style: TextStyle(
@@ -52,6 +65,7 @@ class _SDGScreenState extends State<SDGScreen> {
           ],
         ),
       ),
+
       body: Column(
         children: [
           const SizedBox(height: 16),
@@ -90,7 +104,7 @@ class _SDGScreenState extends State<SDGScreen> {
                         BoxShadow(
                           color: Colors.black.withOpacity(0.2),
                           blurRadius: 6,
-                          offset: Offset(2, 4), // ความเอียงของเงา
+                          offset: const Offset(2, 4),
                         ),
                       ],
                     ),
@@ -108,7 +122,7 @@ class _SDGScreenState extends State<SDGScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNav(currentIndex: 1, onTap: null),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 0, onTap: null),
     );
   }
 }
