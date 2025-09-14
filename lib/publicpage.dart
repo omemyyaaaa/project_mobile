@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/custom_bottom_nav.dart';
 
 class Publicpage extends StatefulWidget {
-  const Publicpage({Key? key}) : super(key: key);
+  final int userId; // เพิ่ม
+
+  const Publicpage({Key? key, required this.userId}) : super(key: key);
 
   @override
   State<Publicpage> createState() => _PublicpageState();
@@ -21,7 +23,11 @@ class _PublicpageState extends State<Publicpage> {
         ),
       ),
       body: const Center(child: Text('Public Content')),
-      bottomNavigationBar: const CustomBottomNav(currentIndex: 1, onTap: null,),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 0,
+        userId: widget.userId, // ต้องส่ง userId
+  
+      ),
     );
   }
 }

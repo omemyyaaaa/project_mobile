@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/upload.dart';
-
+import 'dart:convert'; // สำหรับ json.decode
+import 'package:http/http.dart' as http;
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  final int id; // ได้มาจากตอน Login
+
+  const ProfilePage({Key? key, required this.id}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -16,13 +19,46 @@ class _ProfilePageState extends State<ProfilePage> {
   static const Color _lightGreen = Color(0xFFE8F5E8);
   static const Color _darkBlue = Color(0xFF1976D2);
 
-  // เปลี่ยนสีพื้นหลังตามดีไซน์ในภาพ
   static const Color _backgroundColor = Color(0xFFE8F5E8);
 
-  // ข้อมูลโปรไฟล์ที่สามารถเปลี่ยนแปลงได้
-  String _name = 'Kanpicha Ngoila';
-  String _email = 'kanpicha@example.com';
-  String _phone = '+66 123 456 789';
+  Map<String, dynamic>? profileData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProfile();
+  }
+
+  Future<void> fetchProfile() async {
+    print("Fetching profile for: '${widget.id}'"); // ดูว่า email ถูกส่งไปไหม
+
+    final apiUrl = "http://10.0.2.2:3000/profile/${widget.id}";
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      print("Status code: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          profileData = data['profile'];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          profileData = null;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Fetch error: $e");
+      setState(() {
+        profileData = null;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,37 +72,40 @@ class _ProfilePageState extends State<ProfilePage> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        // ลบปุ่มการตั้งค่าจาก AppBar
-        actions: const [],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  _buildProfileAvatarSection(),
-                  const SizedBox(height: 32),
-                  _buildStatsSection(),
-                  const SizedBox(height: 32),
-                  _buildContactInfoCard(),
-                  const SizedBox(height: 32),
-                  _buildEditProfileButton(),
-                  const SizedBox(height: 32),
-                  _buildSettingsList(),
-                ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : profileData == null
+          ? const Center(
+              child: Text(
+                "ไม่พบข้อมูลผู้ใช้หรือเกิดข้อผิดพลาด",
+                style: TextStyle(fontSize: 16),
               ),
+            )
+          : Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        _buildProfileAvatarSection(),
+                        const SizedBox(height: 32),
+                        _buildStatsSection(),
+                        const SizedBox(height: 32),
+                        _buildContactInfoCard(),
+                        const SizedBox(height: 32),
+                        _buildEditProfileButton(),
+                        const SizedBox(height: 32),
+                        _buildSettingsList(),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildBottomNavigation(),
+              ],
             ),
-          ),
-          _buildBottomNavigation(),
-        ],
-      ),
     );
   }
 
@@ -82,20 +121,11 @@ class _ProfilePageState extends State<ProfilePage> {
             shape: BoxShape.circle,
             border: Border.all(color: Colors.grey[400]!, width: 2),
           ),
-          child: IconButton(
-            icon: const Icon(
-              Icons.camera_alt_outlined,
-              size: 50,
-              color: Colors.black54,
-            ),
-            onPressed: () {
-              _showImagePickerDialog();
-            },
-          ),
+          child: const Icon(Icons.person, size: 60, color: Colors.black54),
         ),
         const SizedBox(height: 16),
         Text(
-          _name,
+          "${profileData!['firstname']} ${profileData!['lastname']}",
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -123,7 +153,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Widget ย่อยสำหรับแสดงแต่ละสถิติ
   Widget _buildStatItem(String count, String label) {
     return Column(
       children: [
@@ -153,9 +182,11 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: Column(
           children: [
-            _buildContactRow(Icons.email, _email),
+            _buildContactRow(Icons.email, profileData!['email']),
             const SizedBox(height: 16),
-            _buildContactRow(Icons.phone, _phone),
+            _buildContactRow(Icons.phone, profileData!['phonenumber']),
+            const SizedBox(height: 16),
+            _buildContactRow(Icons.cake, profileData!['birthdate']),
           ],
         ),
       ),
@@ -183,7 +214,32 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: TextButton(
         onPressed: () {
-          _navigateToEditProfile();
+          if (profileData != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EditProfilePage(
+                  initialName:
+                      "${profileData!['firstname']} ${profileData!['lastname']}",
+                  initialEmail: profileData!['email'] ?? "",
+                  initialPhone: profileData!['phonenumber'] ?? "",
+                ),
+              ),
+            ).then((result) {
+              if (result != null && result is Map<String, String>) {
+                setState(() {
+                  // อัปเดตค่าที่แก้ไขกลับมาจาก EditProfilePage
+                  profileData!['firstname'] = result['name']!.split(" ").first;
+                  profileData!['lastname'] =
+                      result['name']!.split(" ").length > 1
+                      ? result['name']!.split(" ").last
+                      : "";
+                  profileData!['email'] = result['email']!;
+                  profileData!['phonenumber'] = result['phone']!;
+                });
+              }
+            });
+          }
         },
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -207,29 +263,22 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildSettingsList() {
     return Column(
       children: [
-        // เพิ่มรายการตั้งค่า
         _buildSettingsItem(
           icon: Icons.settings,
           title: 'การตั้งค่า',
-          onTap: () {
-            _navigateToSettingsPage();
-          },
+          onTap: () {},
         ),
         const SizedBox(height: 8),
         _buildSettingsItem(
           icon: Icons.lock_outline,
           title: 'ความเป็นส่วนตัว',
-          onTap: () {
-            _navigateToPrivacyPage();
-          },
+          onTap: () {},
         ),
         const SizedBox(height: 8),
         _buildSettingsItem(
           icon: Icons.security,
           title: 'ความปลอดภัย',
-          onTap: () {
-            _navigateToSecurityPage();
-          },
+          onTap: () {},
         ),
       ],
     );
@@ -285,9 +334,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // Widget ย่อยสำหรับแต่ละรายการใน Bottom Navigation
   Widget _buildBottomNavItem(IconData icon, int index, String label) {
     return InkWell(
-      onTap: () {
-        _onBottomNavTap(index);
-      },
+      onTap: () => _onBottomNavTap(index),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -347,29 +394,6 @@ class _ProfilePageState extends State<ProfilePage> {
     print('เลือกรูปจากแกลเลอรี่');
   }
 
-  void _navigateToEditProfile() async {
-    // ไปหน้าแก้ไขโปรไฟล์และรอผลลัพธ์
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditProfilePage(
-          initialName: _name,
-          initialEmail: _email,
-          initialPhone: _phone,
-        ),
-      ),
-    );
-
-    // อัปเดตข้อมูลหากมีการแก้ไขและบันทึก
-    if (result != null && result is Map<String, String>) {
-      setState(() {
-        _name = result['name']!;
-        _email = result['email']!;
-        _phone = result['phone']!;
-      });
-    }
-  }
-
   void _navigateToSettingsPage() {
     // ไปหน้าการตั้งค่า
     Navigator.push(
@@ -397,14 +421,12 @@ class _ProfilePageState extends State<ProfilePage> {
   void _onBottomNavTap(int index) {
     switch (index) {
       case 0:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const MyHome()));
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => MyHome()),
+        );
+
         break;
       case 1:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const Publicpage()));
         break;
       case 2:
         Navigator.of(

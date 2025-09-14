@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/upload.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'sdg_data.dart';
@@ -223,15 +224,21 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 20),
-                            _buildBox(
-                              context,
-                              'อัปโหลดรูปกิจกรรม',
-                              Icons.cloud_upload,
-                              Colors.brown.shade200,
-                              fullWidth: true,
-                            ),
-                            const SizedBox(height: 20),
+const SizedBox(height: 20),
+_buildBox(
+  context,
+  'อัปโหลดรูปกิจกรรม',
+  Icons.cloud_upload,
+  Colors.brown.shade200,
+  fullWidth: true,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => UploadPage()),
+    );
+  },
+),
+const SizedBox(height: 20),
                           ],
                         ),
                       ),
@@ -249,13 +256,14 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
     IconData icon,
     Color color, {
     bool fullWidth = false,
+    VoidCallback? onTap,
   }) {
     return SizedBox(
       width: fullWidth
           ? double.infinity
           : MediaQuery.of(context).size.width * 0.4,
-      child: ElevatedButton.icon(
-        onPressed: () {},
+      child: ElevatedButton.icon( 
+        onPressed: onTap,
         icon: Icon(icon, color: Colors.black),
         label: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),

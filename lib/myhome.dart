@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/profile.dart';
 import 'package:flutter_application_1/publicpage.dart';
+import 'package:flutter_application_1/screen/homesr.dart';
+import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
 import 'package:flutter_application_1/sdgbar.dart';
 import 'package:flutter_application_1/sidebar/trickbar.dart';
 import 'package:flutter_application_1/upload.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
@@ -14,12 +17,21 @@ class MyHome extends StatefulWidget {
 }
 
 class _MyHomeState extends State<MyHome> {
-  // Color constants for consistency
-  static const Color _primaryGreen = Color(0xFF2E7D32);
-  static const Color _lightGreen = Color(0xFFC5E87D);
-  static const Color _backgroundColor = Color(0xFFF5F9E9);
-  static const Color _darkBlue = Color(0xFF3F3D56);
-  static const Color _bottomNavGreen = Color(0xFF1C5F32);
+  int? userId; // เก็บ userId ที่ดึงจาก SharedPreferences
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserId();
+  }
+
+  Future<void> _loadUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userId = prefs.getInt("userId");
+    });
+    print("Loaded userId: $userId"); // Debug
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -280,22 +292,19 @@ class _MyHomeState extends State<MyHome> {
   void _onBottomNavTap(int index) {
     switch (index) {
       case 0:
-        // myhome(หน้าปัจจุบัน)
+        // อยู่หน้า MyHome อยู่แล้ว
         break;
       case 1:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const Publicpage()));
+        break;
       case 2:
-        // Cloud
         Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (context) => UploadPage()));
+        break;
       case 3:
-        // Profile
         Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (context) => const ProfilePage()));
+        ).push(MaterialPageRoute(builder: (context) => ProfilePage(id: id)));
         break;
     }
   }
@@ -316,6 +325,14 @@ class _MyHomeState extends State<MyHome> {
     );
   }
 
+  // Custom colors
+  static const Color _primaryGreen = Color(0xFF4CAF50);
+  static const Color _lightGreen = Color(0xFFE8F5E9);
+  static const Color _backgroundColor = Color(0xFFF5F5F5);
+  static const Color _darkBlue = Color(0xFF1565C0);
+
+  // Helper to get userId for navigation
+  int get id => userId ?? 0;
   // Drawer header with profile info
   Widget _buildDrawerHeader() {
     return Container(
@@ -351,7 +368,7 @@ class _MyHomeState extends State<MyHome> {
       onTap: () {
         Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (context) => const ProfilePage()));
+        ).push(MaterialPageRoute(builder: (context) => ProfilePage(id: id)));
       },
       child: Container(
         decoration: BoxDecoration(
@@ -509,10 +526,17 @@ class _MyHomeState extends State<MyHome> {
             elevation: 4,
           ),
           onPressed: () {
-            Navigator.of(context).pop();
+            // แสดงข้อความ SnackBar
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('ออกจากระบบ')));
+
+            // ไปหน้า LoginPage แบบแทนที่ (ไม่สามารถย้อนกลับมาได้)
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+              (Route<dynamic> route) => false, // เคลียร์ทุกหน้าเก่าออก
+            );
           },
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/myhome.dart';
 
@@ -110,7 +111,7 @@ class _AdditionalInfoScreenState extends State<AdditionalInfoScreen> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MyHome()),
+          MaterialPageRoute(builder: (context) => LoginScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
