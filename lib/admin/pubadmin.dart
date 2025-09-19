@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/myhome.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,17 +12,17 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: Publicpage(),
+      home: RecipePage(),
     );
   }
 }
 
-class Publicpage extends StatefulWidget {
+class RecipePage extends StatefulWidget {
   @override
   _RecipePageState createState() => _RecipePageState();
 }
 
-class _RecipePageState extends State<Publicpage> {
+class _RecipePageState extends State<RecipePage> {
   TextEditingController _controller = TextEditingController();
 
   @override
@@ -31,17 +30,8 @@ class _RecipePageState extends State<Publicpage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFF2E7D32),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MyHome(), // ใช้ id จริง
-              ),
-            );
-          },
-        ),
+        leading: Icon(Icons.menu, color: Colors.white),
+        elevation: 0,
       ),
       body: Container(
         decoration: BoxDecoration(

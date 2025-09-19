@@ -101,8 +101,11 @@ class _SDGScreenState extends State<SDGScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SDGDetailPage(sdgNumber: data['sdgNumber']),
+                        builder: (context) => SDGDetailPage(
+                          sdgNumber: data['sdgNumber'],
+                          userId:
+                              widget.userId, // ส่ง userId จาก SDGScreen ไปด้วย
+                        ),
                       ),
                     );
                   },

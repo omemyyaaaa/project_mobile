@@ -1,9 +1,16 @@
+import 'dart:io' show File;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_application_1/custom_bottom_nav.dart'
+    show CustomBottomNav;
 import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/upload.dart';
 import 'dart:convert'; // สำหรับ json.decode
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart' show ImageSource, ImagePicker;
+import 'package:path_provider/path_provider.dart';
 
 class ProfilePage extends StatefulWidget {
   final int id; // ได้มาจากตอน Login
@@ -23,6 +30,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Map<String, dynamic>? profileData;
   bool isLoading = true;
+  File? _imageFile;
+  String? _stickerPath;
 
   @override
   void initState() {
@@ -82,63 +91,220 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(fontSize: 16),
               ),
             )
-          : Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 24),
-                        _buildProfileAvatarSection(),
-                        const SizedBox(height: 32),
-                        _buildStatsSection(),
-                        const SizedBox(height: 32),
-                        _buildContactInfoCard(),
-                        const SizedBox(height: 32),
-                        _buildEditProfileButton(),
-                        const SizedBox(height: 32),
-                        _buildSettingsList(),
-                      ],
-                    ),
-                  ),
-                ),
-                _buildBottomNavigation(),
-              ],
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  _buildProfileAvatarSection(),
+                  const SizedBox(height: 32),
+                  _buildStatsSection(),
+                  const SizedBox(height: 32),
+                  _buildContactInfoCard(),
+                  const SizedBox(height: 32),
+                  _buildEditProfileButton(),
+                  const SizedBox(height: 32),
+                  _buildSettingsList(),
+                ],
+              ),
             ),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 3, // หน้า Profile
+        userId: widget.id,
+      ),
     );
   }
 
-  // ส่วนรูปโปรไฟล์ ชื่อ และคำอธิบาย
   Widget _buildProfileAvatarSection() {
+    final String fullProfileUrl =
+        profileData?['profile_url'] != null && profileData!['profile_url'] != ""
+        ? "http://10.0.2.2:3000${profileData!['profile_url']}"
+        : "";
+
     return Column(
       children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.grey[400]!, width: 2),
+        GestureDetector(
+          onTap: _showImagePickerDialog,
+          child: Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey[400]!, width: 2),
+            ),
+            child: ClipOval(
+              child: _imageFile != null
+                  ? Image.file(
+                      _imageFile!,
+                      fit: BoxFit.cover,
+                      width: 120,
+                      height: 120,
+                    )
+                  : (_stickerPath != null
+                        ? Image.asset(
+                            _stickerPath!,
+                            fit: BoxFit.cover,
+                            width: 120,
+                            height: 120,
+                          )
+                        : (fullProfileUrl.isNotEmpty
+                              ? Image.network(
+                                  fullProfileUrl,
+                                  fit: BoxFit.cover,
+                                  width: 120,
+                                  height: 120,
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.black54,
+                                ))),
+            ),
           ),
-          child: const Icon(Icons.person, size: 60, color: Colors.black54),
         ),
         const SizedBox(height: 16),
         Text(
           "${profileData!['firstname']} ${profileData!['lastname']}",
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Hello! I love developing mobile apps.',
-          style: TextStyle(fontSize: 14, color: Colors.black54),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ],
     );
+  }
+
+  Future<void> _showImagePickerDialog() async {
+    final ImageSource? source = await showDialog<ImageSource>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('เลือกรูปโปรไฟล์'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('กล้อง'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('แกลเลอรี่'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.emoji_emotions),
+              title: const Text('สติกเกอร์'),
+              onTap: () {
+                Navigator.pop(context);
+                _showStickerPicker(); // เรียก Dialog สติกเกอร์
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // ถ้าเลือกกล้องหรือแกลเลอรี่
+    if (source != null) {
+      await _pickImage(source);
+    }
+  }
+
+  Future<void> _showStickerPicker() async {
+    final selectedSticker = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('เลือกสติกเกอร์'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            children: [
+              GestureDetector(
+                onTap: () =>
+                    Navigator.pop(context, 'assets/images/sticker1.png'),
+                child: Image.asset('assets/images/sticker1.png'),
+              ),
+              GestureDetector(
+                onTap: () =>
+                    Navigator.pop(context, 'assets/images/sticker2.png'),
+                child: Image.asset('assets/images/sticker2.png'),
+              ),
+              // เพิ่มสติกเกอร์อื่น ๆ ตามต้องการ
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selectedSticker != null) {
+      setState(() {
+        _imageFile = null; // ยกเลิกรูปจริง
+        _stickerPath = selectedSticker;
+      });
+
+      // อัปโหลดสติกเกอร์เป็นไฟล์ชั่วคราวเหมือน AdditionalInfoScreen
+      await _uploadSticker(selectedSticker);
+    }
+  }
+
+  Future<void> _uploadSticker(String assetPath) async {
+    final byteData = await rootBundle.load(assetPath);
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/sticker.png');
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+
+    await _uploadProfileImage(
+      widget.id,
+      file,
+    ); // เรียกฟังก์ชันอัปโหลดที่มีอยู่แล้ว
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+
+      // อัปโหลดไฟล์ไปเซิร์ฟเวอร์
+      await _uploadProfileImage(widget.id, _imageFile!);
+    }
+  }
+
+  Future<void> _uploadProfileImage(int userId, File imageFile) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final uri = Uri.parse('http://10.0.2.2:3000/profile/upload/$userId');
+      final request = http.MultipartRequest('POST', uri);
+      request.files.add(
+        await http.MultipartFile.fromPath('profile', imageFile.path),
+      );
+
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
+
+      Navigator.of(context).pop(); // ปิด dialog loading
+
+      if (response.statusCode == 200) {
+        final data = json.decode(respStr);
+        setState(() {
+          profileData!['profile_url'] = data['profile_url'];
+        });
+        // ไม่แสดง SnackBar
+      } else {
+        // ไม่ทำอะไร
+      }
+    } catch (e) {
+      Navigator.of(context).pop();
+      // ไม่แสดง SnackBar
+    }
   }
 
   // ส่วนแสดงสถิติ (โพสต์, ผู้ติดตาม, กำลังติดตาม)
@@ -176,17 +342,16 @@ class _ProfilePageState extends State<ProfilePage> {
   // การ์ดข้อมูลติดต่อ
   Widget _buildContactInfoCard() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 8,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
         child: Column(
           children: [
             _buildContactRow(Icons.email, profileData!['email']),
             const SizedBox(height: 16),
             _buildContactRow(Icons.phone, profileData!['phonenumber']),
             const SizedBox(height: 16),
-            _buildContactRow(Icons.cake, profileData!['birthdate']),
           ],
         ),
       ),
@@ -198,8 +363,8 @@ class _ProfilePageState extends State<ProfilePage> {
     return Row(
       children: [
         Icon(icon, color: Colors.blue[800]),
-        const SizedBox(width: 16),
-        Text(text, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+        const SizedBox(width: 18),
+        Text(text, style: const TextStyle(fontSize: 20, color: Colors.black87)),
       ],
     );
   }
@@ -312,131 +477,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
-  }
-
-  // Bottom Navigation
-  Widget _buildBottomNavigation() {
-    return Container(
-      height: 70,
-      color: _primaryGreen,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildBottomNavItem(Icons.home, 0, 'หน้าแรก'),
-          _buildBottomNavItem(Icons.wifi, 1, 'ฟีด'),
-          _buildBottomNavItem(Icons.cloud_outlined, 2, 'อัปโหลด'),
-          _buildBottomNavItem(Icons.person, 3, 'โปรไฟล์'),
-        ],
-      ),
-    );
-  }
-
-  // Widget ย่อยสำหรับแต่ละรายการใน Bottom Navigation
-  Widget _buildBottomNavItem(IconData icon, int index, String label) {
-    return InkWell(
-      onTap: () => _onBottomNavTap(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.black, size: 28),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Colors.black),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Functions
-  void _showImagePickerDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('เลือกรูปโปรไฟล์'),
-          content: const Text('คุณต้องการเลือกรูปจากแหล่งใด?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _pickImageFromCamera();
-              },
-              child: const Text('กล้อง'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _pickImageFromGallery();
-              },
-              child: const Text('แกลเลอรี่'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('ยกเลิก'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _pickImageFromCamera() {
-    // เพิ่ม logic สำหรับถ่ายรูป
-    print('เลือกรูปจากกล้อง');
-  }
-
-  void _pickImageFromGallery() {
-    // เพิ่ม logic สำหรับเลือกรูปจากแกลเลอรี่
-    print('เลือกรูปจากแกลเลอรี่');
-  }
-
-  void _navigateToSettingsPage() {
-    // ไปหน้าการตั้งค่า
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SettingsPage()),
-    );
-  }
-
-  void _navigateToPrivacyPage() {
-    // ไปหน้าความเป็นส่วนตัว
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PrivacyPage()),
-    );
-  }
-
-  void _navigateToSecurityPage() {
-    // ไปหน้าความปลอดภัย
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SecurityPage()),
-    );
-  }
-
-  void _onBottomNavTap(int index) {
-    switch (index) {
-      case 0:
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => MyHome()),
-        );
-
-        break;
-      case 1:
-        break;
-      case 2:
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => UploadPage()));
-        break;
-      case 3:
-        // หน้าปัจจุบัน ไม่ต้องทำอะไร
-        break;
-    }
   }
 }
 

@@ -1,40 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/admin/adminlogin.dart';
-import 'package:flutter_application_1/custom_bottom_nav.dart';
-import 'package:flutter_application_1/profile.dart';
+import 'package:flutter_application_1/admin/creation.dart';
+import 'package:flutter_application_1/admin/tasking.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
-import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
-import 'package:flutter_application_1/sdgbar.dart';
 import 'package:flutter_application_1/sidebar/trickbar.dart';
-import 'package:flutter_application_1/upload.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
-class MyHome extends StatefulWidget {
-  const MyHome({super.key});
+class MyHomeadmin extends StatefulWidget {
+  const MyHomeadmin({super.key});
 
   @override
-  State<MyHome> createState() => _MyHomeState();
+  State<MyHomeadmin> createState() => _MyHomeState();
 }
 
-class _MyHomeState extends State<MyHome> {
+class _MyHomeState extends State<MyHomeadmin> {
   int? userId; // เก็บ userId ที่ดึงจาก SharedPreferences
 
   @override
   void initState() {
     super.initState();
-    _loadUserId();
-  }
-
-  Future<void> _loadUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userId = prefs.getInt("userId");
-    });
-    print("Loaded userId: $userId"); // Debug
   }
 
   @override
@@ -44,11 +29,6 @@ class _MyHomeState extends State<MyHome> {
       appBar: _buildAppBar(),
       drawer: _buildDrawer(),
       body: _buildBody(),
-      bottomNavigationBar: CustomBottomNav(
-        // ✅ ใช้ CustomBottomNav
-        currentIndex: 0, // index 0 = หน้า Home
-        userId: id, // ส่ง userId ที่โหลดมาจาก SharedPreferences
-      ),
     );
   }
 
@@ -170,8 +150,6 @@ class _MyHomeState extends State<MyHome> {
           _buildInfoDescription(),
           const SizedBox(height: 24),
           _buildStatistics(),
-          const SizedBox(height: 24),
-          _buildLearnButton(),
         ],
       ),
     );
@@ -249,28 +227,6 @@ class _MyHomeState extends State<MyHome> {
     );
   }
 
-  // Learn more button
-  Widget _buildLearnButton() {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: _darkBlue,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
-      ),
-      onPressed: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => SDGBar()));
-      },
-      child: const Text(
-        "เรียนรู้เกี่ยวกับ SDGs",
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-
   // Navigation drawer
   Widget _buildDrawer() {
     return Drawer(
@@ -291,11 +247,11 @@ class _MyHomeState extends State<MyHome> {
   static const Color _primaryGreen = Color(0xFF4CAF50);
   static const Color _lightGreen = Color(0xFFE8F5E9);
   static const Color _backgroundColor = Color(0xFFF5F5F5);
-  static const Color _darkBlue = Color(0xFF1565C0);
 
   // Helper to get userId for navigation
   int get id => userId ?? 0;
-  // Drawer header with profile info
+
+  // Drawer header - simplified without profile
   Widget _buildDrawerHeader() {
     return Container(
       width: double.infinity,
@@ -312,9 +268,14 @@ class _MyHomeState extends State<MyHome> {
           padding: const EdgeInsets.all(20.0),
           child: Row(
             children: [
-              _buildProfileAvatar(),
-              const SizedBox(width: 10),
-              ProfileInfoWidget(userId: id), // ✅ ใช้ widget ใหม่
+              const Text(
+                "เมนู",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const Spacer(),
               _buildCloseButton(),
             ],
@@ -324,30 +285,6 @@ class _MyHomeState extends State<MyHome> {
     );
   }
 
-  // Profile avatar
-  Widget _buildProfileAvatar() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => ProfilePage(id: id)));
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Profile information
-
   // Close button for drawer
   Widget _buildCloseButton() {
     return IconButton(
@@ -356,7 +293,7 @@ class _MyHomeState extends State<MyHome> {
     );
   }
 
-  // Drawer menu items
+  // Drawer menu items - removed 17 SDGs option
   Widget _buildDrawerMenu() {
     return Expanded(
       child: Padding(
@@ -364,66 +301,76 @@ class _MyHomeState extends State<MyHome> {
         child: Column(
           children: [
             _buildMenuItem(
-              icon: Icons.public,
-              text: "17 SDGs",
+              icon: Icons.add_task,
+              text: "สร้างภารกิจ",
               iconColor: const Color(0xFF4CAF50),
               onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
+                Navigator.of(context).pop(); // ปิด Drawer ก่อน
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => SDGBar(), // นำทางไปยัง sdgbar.dart
-                  ),
+                  MaterialPageRoute(builder: (context) => TaskCreationScreen()),
                 );
               },
             ),
+            _buildMenuItem(
+              icon: Icons.gps_fixed,
+              text: "ภารกิจ",
+              iconColor: const Color(0xFFFF9800),
+              onTap: () {
+                Navigator.of(context).pop(); // ปิด Drawer ก่อน
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Tasking()),
+                );
+              },
+            ),
+
+            _buildMenuItem(
+              icon: Icons.check_circle,
+              text: "ตรวจสอบภารกิจ",
+              iconColor: const Color(0xFFFF9800),
+              onTap: () {
+                Navigator.of(context).pop();
+                // TODO: ไปหน้าตรวจสอบภารกิจ
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("ไปหน้าตรวจสอบภารกิจ")),
+                );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.campaign,
+              text: "เผยแพร่",
+              iconColor: const Color(0xFF2196F3),
+              onTap: () {
+                Navigator.of(context).pop(); // ปิด Drawer ก่อน
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Publicpage()),
+                );
+              },
+            ),
+            const Divider(), // เส้นแบ่ง
             _buildMenuItem(
               icon: Icons.format_quote,
               text: "เคล็ดลับปฏิบัติจริง",
               iconColor: const Color(0xFFE91E63),
               onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
+                Navigator.of(context).pop();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const TrickBar(), // นำทางไปยัง sdgbar.dart
-                  ),
+                  MaterialPageRoute(builder: (context) => const TrickBar()),
                 );
               },
             ),
             _buildMenuItem(
               icon: Icons.calendar_today,
               text: "ปฏิทิน",
-              iconColor: const Color(0xFF2196F3),
-              onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const CalenBar(), // นำทางไปยัง sdgbar.dart
-                  ),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.contact_support,
-              text: "ติดต่อเรา",
               iconColor: const Color(0xFF9C27B0),
-            ),
-            _buildMenuItem(
-              icon: Icons.admin_panel_settings,
-              text: "Admin",
-              iconColor: const Color(0xFF2196F3),
               onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
+                Navigator.of(context).pop();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const AdminLoginScreen(), // นำทางไปยัง sdgbar.dart
-                  ),
+                  MaterialPageRoute(builder: (context) => const CalenBar()),
                 );
               },
             ),
@@ -509,112 +456,6 @@ class _MyHomeState extends State<MyHome> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class ProfileInfoWidget extends StatefulWidget {
-  final int userId;
-
-  const ProfileInfoWidget({super.key, required this.userId});
-
-  @override
-  State<ProfileInfoWidget> createState() => _ProfileInfoWidgetState();
-}
-
-class _ProfileInfoWidgetState extends State<ProfileInfoWidget> {
-  Map<String, dynamic>? profileData;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchProfile();
-  }
-
-  Future<void> fetchProfile() async {
-    final apiUrl = "http://10.0.2.2:3000/profile/${widget.userId}";
-    try {
-      final response = await http.get(Uri.parse(apiUrl));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          profileData = data['profile'];
-          isLoading = false;
-        });
-      } else {
-        setState(() => isLoading = false);
-      }
-    } catch (e) {
-      setState(() => isLoading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Text(
-        "กำลังโหลด...",
-        style: TextStyle(color: Colors.white, fontSize: 16),
-      );
-    }
-
-    if (profileData == null) {
-      return const Text(
-        "ไม่พบข้อมูล",
-        style: TextStyle(color: Colors.white, fontSize: 16),
-      );
-    }
-
-    final String profileUrl =
-        profileData?['profile_url'] != null && profileData!['profile_url'] != ""
-        ? "http://10.0.2.2:3000${profileData!['profile_url']}"
-        : "";
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) =>
-                    ProfilePage(id: widget.userId), // ✅ ใช้ widget.userId
-              ),
-            );
-          },
-          child: CircleAvatar(
-            radius: 26,
-            backgroundColor: Colors.white,
-            child: ClipOval(
-              child: profileUrl.isNotEmpty
-                  ? Image.network(
-                      profileUrl,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      width: 48,
-                      height: 48,
-                      color: Colors.grey[200], // ✅ ไม่มีไอคอน ใช้พื้นหลังแทน
-                    ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 15),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "${profileData!['firstname']} ${profileData!['lastname']}",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

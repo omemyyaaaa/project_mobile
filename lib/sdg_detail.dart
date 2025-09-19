@@ -6,7 +6,13 @@ import 'sdg_data.dart';
 
 class SDGDetailPage extends StatefulWidget {
   final int sdgNumber;
-  const SDGDetailPage({super.key, required this.sdgNumber});
+  final int userId; // ✅ เพิ่มเข้ามา
+
+  const SDGDetailPage({
+    super.key,
+    required this.sdgNumber,
+    required this.userId, // ✅ บังคับรับ userId ด้วย
+  });
 
   @override
   _SDGDetailPageState createState() => _SDGDetailPageState();
@@ -234,7 +240,9 @@ _buildBox(
   onTap: () {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => UploadPage()),
+      MaterialPageRoute(
+  builder: (context) => UploadPage(userId: widget.userId),
+),
     );
   },
 ),

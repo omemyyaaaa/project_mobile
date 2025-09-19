@@ -26,9 +26,13 @@ class CustomBottomNav extends StatelessWidget {
         break;
       case 1:
         return; // ถ้าไม่มีหน้าสำหรับ index 1
-      case 2:
-        page = UploadPage();
-        break;
+       case 2:
+case 2:
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => UploadPage(userId: userId)), // ใช้ userId จาก class
+  );
+  break;
       case 3:
         page = ProfilePage(id: userId);
         break;
