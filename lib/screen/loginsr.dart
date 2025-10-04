@@ -39,8 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
         if (data["success"]) {
           print("Login successful!");
           final int userId = data["user"]["id"];
-
-          // ✅ เก็บ userId ลง SharedPreferences
           final prefs = await SharedPreferences.getInstance();
           await prefs.setInt("userId", userId);
 

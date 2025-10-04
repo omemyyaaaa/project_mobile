@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/adminlogin.dart';
 import 'package:flutter_application_1/custom_bottom_nav.dart';
+import 'package:flutter_application_1/leaderboard.dart';
 import 'package:flutter_application_1/profile.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
 import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
 import 'package:flutter_application_1/sdgbar.dart';
-import 'package:flutter_application_1/sidebar/trickbar.dart';
 import 'package:flutter_application_1/upload.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -215,12 +215,6 @@ class _MyHomeState extends State<MyHome> {
           number: "13",
           label: "ทำแล้ว",
         ),
-        _buildStatItem(
-          icon: Icons.format_quote,
-          iconColor: Colors.pink,
-          number: "60",
-          label: "เคล็ดลับระดับประเทศ",
-        ),
       ],
     );
   }
@@ -260,14 +254,23 @@ class _MyHomeState extends State<MyHome> {
         elevation: 4,
       ),
       onPressed: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => SDGBar()));
+        // ตรวจสอบก่อนว่า userId ไม่ใช่ null
+        if (userId != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              // ❗️❗️ แก้ตรงนี้ ❗️❗️
+              // ไม่ใช่ SDGBar() แต่เป็น SDGScreen และส่ง userId ไปด้วย
+              builder: (context) => SDGScreen(userId: userId!),
+            ),
+          );
+        } else {
+          // กรณีที่ยังโหลด userId ไม่เสร็จ หรือไม่มี userId
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('กรุณาล็อกอินก่อนใช้งาน')),
+          );
+        }
       },
-      child: const Text(
-        "เรียนรู้เกี่ยวกับ SDGs",
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
+      child: const Text("เรียนรู้เกี่ยวกับ SDGs"),
     );
   }
 
@@ -368,28 +371,15 @@ class _MyHomeState extends State<MyHome> {
               text: "17 SDGs",
               iconColor: const Color(0xFF4CAF50),
               onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SDGBar(), // นำทางไปยัง sdgbar.dart
-                  ),
-                );
-              },
-            ),
-            _buildMenuItem(
-              icon: Icons.format_quote,
-              text: "เคล็ดลับปฏิบัติจริง",
-              iconColor: const Color(0xFFE91E63),
-              onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const TrickBar(), // นำทางไปยัง sdgbar.dart
-                  ),
-                );
+                if (userId != null) {
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SDGScreen(userId: userId!),
+                    ),
+                  );
+                }
               },
             ),
             _buildMenuItem(
@@ -405,6 +395,33 @@ class _MyHomeState extends State<MyHome> {
                         const CalenBar(), // นำทางไปยัง sdgbar.dart
                   ),
                 );
+              },
+            ),
+            _buildMenuItem(
+              icon: Icons.leaderboard,
+              text: "จัดอันดับ",
+              iconColor: const Color(0xFFFF9800),
+              onTap: () {
+                // 1. ตรวจสอบก่อนว่า userId โหลดเสร็จแล้วหรือยัง (ไม่ใช่ null)
+                if (userId != null) {
+                  Navigator.of(context).pop(); // ปิด Drawer ก่อน
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      // 2. ส่ง userId ที่ไม่เป็น null เข้าไปใน LeaderboardPage
+                      builder: (context) =>
+                          LeaderboardPage(currentUserId: userId!),
+                    ),
+                  );
+                } else {
+                  // 3. กรณีที่ยังโหลด userId ไม่เสร็จ ให้แจ้งเตือน
+                  Navigator.of(context).pop(); // ปิด Drawer ก่อน
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('กำลังโหลดข้อมูลผู้ใช้ กรุณาลองใหม่'),
+                    ),
+                  );
+                }
               },
             ),
             _buildMenuItem(
@@ -605,7 +622,7 @@ class _ProfileInfoWidgetState extends State<ProfileInfoWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "${profileData!['firstname']} ${profileData!['lastname']}",
+              "${profileData!['username']}",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,

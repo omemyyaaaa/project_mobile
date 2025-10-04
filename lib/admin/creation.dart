@@ -1,25 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/homeamin.dart';
 import 'package:intl/intl.dart';
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Task Creation App',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        fontFamily: 'Roboto',
-      ),
-      home: TaskCreationScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class TaskCreationScreen extends StatefulWidget {
   @override
@@ -28,392 +12,31 @@ class TaskCreationScreen extends StatefulWidget {
 
 class _TaskCreationScreenState extends State<TaskCreationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _participantController = TextEditingController(text: '20');
+
+  // 1. เพิ่ม TextEditingController สำหรับ title และ location
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _participantController =
+      TextEditingController(text: '');
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _pointsController = TextEditingController();
+
   DateTime _selectedDate = DateTime.now();
-  bool _showTaskList = false;
-  String _savedDescription = '';
-  int _savedParticipantCount = 20;
-  DateTime _savedDate = DateTime.now();
+  File? _imageFile;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF2d5a3d),
-        elevation: 2,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MyHomeadmin(), // ใช้ id จริง
-              ),
-            );
-          },
-        ),
-        actions: [
-          if (_showTaskList)
-            Icon(
-              Icons.notifications,
-              color: Colors.white,
-            ),
-        ],
-      ),
-      backgroundColor: Color(0xFFf0f8e8),
-      body: _showTaskList ? _buildTaskListView() : _buildCreateTaskView(),
-    );
+  final List<String> _sdgList = List.generate(17, (i) => "SDG${i + 1}");
+  List<String> _selectedSdgs = [];
+  final ImagePicker _picker = ImagePicker();
+  bool _sdgDropdownOpen = false;
+
+  Future<void> _pickImageFromGallery() async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) setState(() => _imageFile = File(picked.path));
   }
 
-  Widget _buildCreateTaskView() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'สร้างภารกิจใหม่',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2d5a3d),
-              ),
-            ),
-            SizedBox(height: 20),
-            
-            // จำนวนผู้เข้าร่วม
-            _buildFormField(
-              label: 'จำนวนผู้เข้าร่วม',
-              child: TextFormField(
-                controller: _participantController,
-                keyboardType: TextInputType.number,
-                decoration: _inputDecoration('20'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'กรุณากรอกจำนวนผู้เข้าร่วม';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            
-            // วันที่เริ่มต้น
-            _buildFormField(
-              label: 'วันที่เริ่มต้น',
-              child: InkWell(
-                onTap: _selectDate,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          DateFormat('dd/MM/yyyy').format(_selectedDate),
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      Icon(Icons.calendar_today, color: Colors.grey),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            
-            // รายละเอียดภารกิจ
-            _buildFormField(
-              label: 'รายละเอียดภารกิจ',
-              child: TextFormField(
-                controller: _descriptionController,
-                decoration: _inputDecoration(''),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'กรุณากรอกรายละเอียดภารกิจ';
-                  }
-                  return null;
-                },
-              ),
-            ),
-            
-            // อัปโหลดเอกสาร
-            _buildFormField(
-              label: 'อัปโหลดเอกสารภารกิจ',
-              child: Container(
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Color(0xFFd0d0d0),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: InkWell(
-                  onTap: _uploadDocument,
-                  borderRadius: BorderRadius.circular(15),
-                  child: Center(
-                    child: Icon(
-                      Icons.add,
-                      size: 40,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            
-            SizedBox(height: 30),
-            
-            // ปุ่มยกเลิกและบันทึก
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _cancelTask,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF6c5ce7),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      'ยกเลิก',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 15),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _saveTask,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF2d3436),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      'บันทึก',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTaskListView() {
-    return Padding(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            children: [
-              Icon(
-                Icons.camera_alt,
-                size: 24,
-                color: Color(0xFF2d5a3d),
-              ),
-              SizedBox(width: 15),
-              Expanded(
-                child: Text(
-                  'ภารกิจ',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2d5a3d),
-                  ),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Color(0xFF00b894),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Text(
-                  'ยืนยันสถานะ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(width: 8),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Color(0xFFe17055),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Text(
-                  'ปิดใช้งาน',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: 20),
-          
-          // Task Card
-          Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Color(0xFFe8e8e8),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'รูปภาพเพื่อรับกิจกรรม',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2d5a3d),
-                  ),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  DateFormat('dd/MM/yyyy').format(_savedDate),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  'รายละเอียดภารกิจ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  _savedDescription,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 15),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(width: 5),
-                        Text(
-                          '0/$_savedParticipantCount',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Handle view users
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFf1c40f),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                      child: Text(
-                        'ดูผู้ใช้',
-                        style: TextStyle(
-                          color: Color(0xFF2d3436),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormField({required String label, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.black87,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 8),
-        child,
-        SizedBox(height: 15),
-      ],
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(25),
-        borderSide: BorderSide.none,
-      ),
-      filled: true,
-      fillColor: Colors.white,
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(25),
-        borderSide: BorderSide(
-          color: Color(0xFF2d5a3d).withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-    );
+  Future<void> _pickImageFromCamera() async {
+    final picked = await _picker.pickImage(source: ImageSource.camera);
+    if (picked != null) setState(() => _imageFile = File(picked.path));
   }
 
   void _selectDate() async {
@@ -427,57 +50,389 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
           data: ThemeData.light().copyWith(
             primaryColor: Color(0xFF2d5a3d),
             colorScheme: ColorScheme.light(primary: Color(0xFF2d5a3d)),
-            buttonTheme: ButtonThemeData(textTheme: ButtonTextTheme.primary),
           ),
           child: child!,
         );
       },
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
+    if (picked != null) setState(() => _selectedDate = picked);
   }
 
-  void _uploadDocument() {
-    // Handle file upload
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('เปิดตัวเลือกไฟล์...'),
-        backgroundColor: Color(0xFF2d5a3d),
-      ),
-    );
-  }
+  Future<void> _saveTask() async {
+    if (!_formKey.currentState!.validate()) return;
+    try {
+      // 3. แก้ไข URL ของ API ให้ถูกต้องตามที่เราได้ทำไว้
+      var request = http.MultipartRequest(
+        "POST",
+        Uri.parse("http://10.0.2.2:3000/create/create"),
+      );
 
-  void _cancelTask() {
-    _participantController.text = '20';
-    _descriptionController.clear();
-    _selectedDate = DateTime.now();
-  }
+      // 4. เพิ่ม title และ location เข้าไปใน request.fields
+      request.fields["title"] = _titleController.text;
+      request.fields["location"] = _locationController.text;
+      request.fields["participants"] = _participantController.text;
+      request.fields["activity_date"] =
+          DateFormat("yyyy-MM-dd").format(_selectedDate);
+      request.fields["description"] = _descriptionController.text;
+      request.fields["points"] = _pointsController.text;
+      request.fields["sdgs"] = _selectedSdgs.join(",");
 
-  void _saveTask() {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _savedDescription = _descriptionController.text;
-        _savedParticipantCount = int.parse(_participantController.text);
-        _savedDate = _selectedDate;
-        _showTaskList = true;
-      });
+      if (_imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath("image", _imageFile!.path),
+        );
+      }
 
+      var response = await request.send();
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("✅ บันทึกภารกิจเรียบร้อย")),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MyHomeadmin()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ บันทึกไม่สำเร็จ [${response.statusCode}]")),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('บันทึกภารกิจเรียบร้อยแล้ว!'),
-          backgroundColor: Color(0xFF00b894),
-        ),
+        SnackBar(content: Text("⚠️ เกิดข้อผิดพลาด: $e")),
       );
     }
   }
 
   @override
   void dispose() {
+    // 5. dispose controller ที่เพิ่มเข้ามาใหม่
+    _titleController.dispose();
+    _locationController.dispose();
     _participantController.dispose();
     _descriptionController.dispose();
+    _pointsController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("สร้างภารกิจ"),
+        backgroundColor: Color(0xFF2d5a3d),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      backgroundColor: Color(0xFFf0f8e8),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 2,
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // 2. เพิ่ม TextFormField สำหรับ Title และ Location ใน UI
+                      _buildFormField(
+                        label: 'หัวข้อภารกิจ',
+                        child: TextFormField(
+                          controller: _titleController,
+                          decoration: _inputDecoration('ระบุหัวข้อภารกิจ'),
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'กรุณากรอกหัวข้อภารกิจ'
+                              : null,
+                        ),
+                      ),
+                      _buildFormField(
+                        label: 'สถานที่',
+                        child: TextFormField(
+                          controller: _locationController,
+                          decoration: _inputDecoration('ระบุสถานที่จัดกิจกรรม'),
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'กรุณากรอกสถานที่'
+                              : null,
+                        ),
+                      ),
+                      _buildFormField(
+                        label: 'จำนวนผู้เข้าร่วม',
+                        child: TextFormField(
+                          controller: _participantController,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration(''),
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'กรุณากรอกจำนวน' : null,
+                        ),
+                      ),
+                      _buildFormField(
+                        label: 'วันที่เริ่มต้น',
+                        child: InkWell(
+                          onTap: _selectDate,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(25),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(DateFormat('dd/MM/yyyy')
+                                    .format(_selectedDate)),
+                                Icon(Icons.calendar_today,
+                                    color: Colors.grey.shade600),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      _buildFormField(
+                        label: 'รายละเอียดภารกิจ',
+                        child: TextFormField(
+                          controller: _descriptionController,
+                          maxLines: 3,
+                          decoration: _inputDecoration('กรอกรายละเอียดภารกิจ'),
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'กรุณากรอกรายละเอียด'
+                              : null,
+                        ),
+                      ),
+                      _buildFormField(
+                        label: 'คะแนน',
+                        child: TextFormField(
+                          controller: _pointsController,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration('กรอกคะแนน'),
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'กรุณากรอกคะแนน' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              Card(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                elevation: 2,
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("เลือกเป้าหมาย SDGs",
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      _buildMultiSelectDropdown(),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (_) {
+                      return SafeArea(
+                        child: Wrap(
+                          children: [
+                            ListTile(
+                              leading: Icon(Icons.photo),
+                              title: Text("เลือกจากแกลเลอรี"),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _pickImageFromGallery();
+                              },
+                            ),
+                            ListTile(
+                              leading: Icon(Icons.camera_alt),
+                              title: Text("ถ่ายรูป"),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _pickImageFromCamera();
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+                child: Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.grey[200],
+                  ),
+                  child: _imageFile == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_a_photo,
+                                size: 40, color: Colors.grey.shade600),
+                            SizedBox(height: 8),
+                            Text("เพิ่มรูปภาพ",
+                                style: TextStyle(color: Colors.grey.shade600)),
+                          ],
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.file(_imageFile!,
+                              width: double.infinity,
+                              height: 160,
+                              fit: BoxFit.cover),
+                        ),
+                ),
+              ),
+              SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => MyHomeadmin()),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25)),
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text("ยกเลิก"),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _saveTask,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 48, 159, 87),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25)),
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text("บันทึก"),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiSelectDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _sdgDropdownOpen = !_sdgDropdownOpen;
+            });
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedSdgs.isEmpty
+                        ? "เลือก SDGs"
+                        : _selectedSdgs.join(", "),
+                  ),
+                ),
+                Icon(Icons.arrow_drop_down),
+              ],
+            ),
+          ),
+        ),
+        if (_sdgDropdownOpen)
+          Container(
+            margin: EdgeInsets.only(top: 8),
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: Column(
+              children: _sdgList.map((sdg) {
+                final isSelected = _selectedSdgs.contains(sdg);
+                return CheckboxListTile(
+                  title: Text(sdg),
+                  value: isSelected,
+                  onChanged: (checked) {
+                    setState(() {
+                      checked == true
+                          ? _selectedSdgs.add(sdg)
+                          : _selectedSdgs.remove(sdg);
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                );
+              }).toList(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFormField({required String label, required Widget child}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87)),
+          SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(25),
+        borderSide: BorderSide.none,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+    );
   }
 }

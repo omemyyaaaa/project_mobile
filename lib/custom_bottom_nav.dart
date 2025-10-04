@@ -25,7 +25,10 @@ class CustomBottomNav extends StatelessWidget {
         page = MyHome();
         break;
       case 1:
-        return; // ถ้าไม่มีหน้าสำหรับ index 1
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Publicpage()), // ใช้ userId จาก class
+      ); // ถ้าไม่มีหน้าสำหรับ index 1
        case 2:
 case 2:
   Navigator.push(

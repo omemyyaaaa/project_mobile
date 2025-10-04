@@ -1,16 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:birth_picker/birth_picker.dart' show BirthPicker;
+// import 'package:birth_picker/birth_picker.dart' show BirthPicker; // ไม่ได้ใช้
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_application_1/screen/homesr.dart'; // ✅ ยืนยันว่า import ถูกต้องตามชื่อไฟล์ที่คุณให้มา (homesr.dart)
 import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:google_sign_in/google_sign_in.dart'; // ไม่ได้ใช้
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key}); // ✅ เพิ่ม const constructor เพื่อเป็นแนวปฏิบัติที่ดี
+
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -20,14 +23,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController dobController = TextEditingController();
 
   File? _profileImage;
   String? _stickerPath;
   final ImagePicker _picker = ImagePicker();
+  final _formKey = GlobalKey<FormState>(); // ✅ เพิ่ม FormKey สำหรับ validation
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    usernameController.dispose();
+    phoneController.dispose();
+    dobController.dispose();
+    super.dispose();
+  }
 
   Future<void> pickImage(ImageSource source) async {
     final XFile? image = await _picker.pickImage(source: source);
@@ -50,29 +64,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("เลือกรูปโปรไฟล์"),
+        title: const Text("เลือกรูปโปรไฟล์"), // ✅ เพิ่ม const
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text("ถ่ายรูป"),
+              leading: const Icon(Icons.camera_alt), // ✅ เพิ่ม const
+              title: const Text("ถ่ายรูป"), // ✅ เพิ่ม const
               onTap: () {
                 Navigator.pop(context);
                 pickImage(ImageSource.camera);
               },
             ),
             ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text("เลือกจาก Gallery"),
+              leading: const Icon(Icons.photo_library), // ✅ เพิ่ม const
+              title: const Text("เลือกจาก Gallery"), // ✅ เพิ่ม const
               onTap: () {
                 Navigator.pop(context);
                 pickImage(ImageSource.gallery);
               },
             ),
             ListTile(
-              leading: Icon(Icons.emoji_emotions),
-              title: Text("เลือกสติกเกอร์"),
+              leading: const Icon(Icons.emoji_emotions), // ✅ เพิ่ม const
+              title: const Text("เลือกสติกเกอร์"), // ✅ เพิ่ม const
               onTap: () {
                 Navigator.pop(context);
                 showStickerPicker();
@@ -88,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("เลือกสติกเกอร์"),
+        title: const Text("เลือกสติกเกอร์"), // ✅ เพิ่ม const
         content: SizedBox(
           width: double.maxFinite,
           child: GridView.count(
@@ -109,6 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
                 child: Image.asset("assets/images/sticker2.png"),
               ),
+              // เพิ่มสติกเกอร์อื่น ๆ ตามต้องการ
             ],
           ),
         ),
@@ -117,20 +132,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> registerUser() async {
-    if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("รหัสผ่านไม่ตรงกัน")));
+    // ✅ ตรวจสอบ validation ก่อนส่งข้อมูล
+    if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("รหัสผ่านไม่ตรงกัน")),
+      );
+      return;
+    }
+
+    // แสดง loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
     var uri = Uri.parse("http://10.0.2.2:3000/register");
     var request = http.MultipartRequest('POST', uri);
 
     request.fields['email'] = emailController.text;
     request.fields['password'] = passwordController.text;
-    request.fields['firstname'] = firstNameController.text;
-    request.fields['lastname'] = lastNameController.text;
+    request.fields['username'] = usernameController.text;
     request.fields['phone_number'] = phoneController.text;
     request.fields['birthday'] = dobController.text;
 
@@ -148,168 +174,233 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     }
 
-    final response = await request.send();
-    final respStr = await response.stream.bytesToString();
-    final data = jsonDecode(respStr);
+    try {
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
+      final data = jsonDecode(respStr);
 
-    if (response.statusCode == 200 && data["success"]) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("สมัครสมาชิกสำเร็จ")));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => LoginScreen()),
-      );
-    } else {
+      Navigator.of(context).pop(); // ปิด loading dialog
+
+      if (response.statusCode == 200 && data["success"]) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("สมัครสมาชิกสำเร็จ")),
+        );
+        // ✅ แก้ไขตรงนี้: เพิ่ม const หน้า HomeScreen()
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()), // << แก้ไขแล้ว
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["message"] ?? "เกิดข้อผิดพลาด")),
+        );
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // ปิด loading dialog หากเกิด error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data["message"] ?? "เกิดข้อผิดพลาด")),
+        SnackBar(content: Text("เกิดข้อผิดพลาดในการเชื่อมต่อ: $e")),
       );
+      print("Register error: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("สร้างบัญชี")),
+      appBar: AppBar(title: const Text("สร้างบัญชี")), // ✅ เพิ่ม const
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            SizedBox(height: 16),
+        child: Form( // ✅ เพิ่ม Form widget สำหรับ validation
+          key: _formKey,
+          child: Column(
+            children: [
+              const SizedBox(height: 16), // ✅ เพิ่ม const
 
-            // รูปโปรไฟล์
-            GestureDetector(
-              onTap: pickProfileImage,
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey.shade300,
-                backgroundImage: _profileImage != null
-                    ? FileImage(_profileImage!)
-                    : _stickerPath != null
-                    ? AssetImage(_stickerPath!) as ImageProvider
-                    : null,
-                child: (_profileImage == null && _stickerPath == null)
-                    ? Icon(Icons.add_a_photo, size: 40, color: Colors.white)
-                    : null,
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: "อีเมล", // ตัวหนังสืออยู่ด้านบน
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12), // ทำให้โค้งมน
+              // รูปโปรไฟล์
+              GestureDetector(
+                onTap: pickProfileImage,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey.shade300,
+                  backgroundImage: _profileImage != null
+                      ? FileImage(_profileImage!)
+                      : _stickerPath != null
+                          ? AssetImage(_stickerPath!) as ImageProvider
+                          : null,
+                  child: (_profileImage == null && _stickerPath == null)
+                      ? const Icon(Icons.add_a_photo, size: 40, color: Colors.white) // ✅ เพิ่ม const
+                      : null,
                 ),
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              _buildTextField( // ✅ ใช้ _buildTextField
+                controller: emailController,
+                labelText: "อีเมล",
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกอีเมล';
+                  }
+                  if (!value.contains('@')) {
+                    return 'กรุณากรอกอีเมลที่ถูกต้อง';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              _buildTextField(
+                controller: passwordController,
                 labelText: "รหัสผ่าน",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกรหัสผ่าน';
+                  }
+                  if (value.length < 6) {
+                    return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                  }
+                  return null;
+                },
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: confirmPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              _buildTextField(
+                controller: confirmPasswordController,
                 labelText: "ยืนยันรหัสผ่าน",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณายืนยันรหัสผ่าน';
+                  }
+                  if (value != passwordController.text) {
+                    return 'รหัสผ่านไม่ตรงกัน';
+                  }
+                  return null;
+                },
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: firstNameController,
-              decoration: InputDecoration(
-                labelText: "ชื่อ",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              _buildTextField(
+                controller: usernameController,
+                labelText: "ชื่อผู้ใช้",
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกชื่อผู้ใช้';
+                  }
+                  return null;
+                },
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: lastNameController,
-              decoration: InputDecoration(
-                labelText: "นามสกุล",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              _buildTextField(
+                controller: phoneController,
                 labelText: "เบอร์โทร",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value != null && value.isNotEmpty && (value.length < 9 || value.length > 10)) {
+                    return 'กรุณากรอกเบอร์โทรที่ถูกต้อง';
+                  }
+                  return null;
+                },
               ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: dobController,
-              readOnly: true,
-              decoration: InputDecoration(
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              _buildDateField( // ✅ ใช้ _buildDateField
+                controller: dobController,
                 labelText: "วันเกิด",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+              ),
+              const SizedBox(height: 24), // ✅ เพิ่ม const
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: registerUser,
+                  child: const Text("สร้างบัญชี", style: TextStyle(fontSize: 18)), // ✅ เพิ่ม const
                 ),
               ),
-              onTap: () {
-                showCupertinoModalPopup(
-                  context: context,
-                  builder: (_) => Container(
-                    height: 250,
-                    color: Colors.white,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 200,
-                          child: CupertinoDatePicker(
-                            mode: CupertinoDatePickerMode.date,
-                            initialDateTime: DateTime(2000, 1, 1),
-                            minimumDate: DateTime(1900, 1, 1),
-                            maximumDate: DateTime.now(),
-                            onDateTimeChanged: (DateTime date) {
-                              dobController.text = date.toIso8601String().split(
-                                'T',
-                              )[0];
-                            },
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text("ยืนยัน"),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: registerUser,
-                child: Text("สร้างบัญชี", style: TextStyle(fontSize: 18)),
+              const SizedBox(height: 16), // ✅ เพิ่ม const
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()), // ✅ เพิ่ม const
+                  );
+                },
+                child: const Text("มีบัญชีอยู่แล้ว? เข้าสู่ระบบ"), // ✅ เพิ่ม const
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      validator: validator,
+    );
+  }
+
+  // ✅ เติมเต็มฟังก์ชัน _buildDateField ที่ขาดหายไป
+  Widget _buildDateField({
+    required TextEditingController controller,
+    required String labelText,
+  }) {
+    return TextFormField(
+      controller: controller,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        suffixIcon: const Icon(Icons.calendar_today), // ✅ เพิ่ม icon ปฏิทิน
+      ),
+      onTap: () {
+        showCupertinoModalPopup(
+          context: context,
+          builder: (_) => Container(
+            height: 250,
+            color: Colors.white,
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    initialDateTime: DateTime(2000, 1, 1),
+                    minimumDate: DateTime(1900, 1, 1),
+                    maximumDate: DateTime.now(),
+                    onDateTimeChanged: (DateTime date) {
+                      controller.text = date.toIso8601String().split('T')[0];
+                    },
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("ยืนยัน"), // ✅ เพิ่ม const
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'กรุณาเลือกวันเกิด';
+        }
+        return null;
+      },
     );
   }
 }

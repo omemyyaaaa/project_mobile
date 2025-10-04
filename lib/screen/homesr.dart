@@ -4,7 +4,8 @@ import 'package:flutter_application_1/screen/registersr.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
+  
+const HomeScreen({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

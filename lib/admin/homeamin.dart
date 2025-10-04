@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/admin/audit_screen.dart';
+import 'package:flutter_application_1/admin/completed.dart';
 import 'package:flutter_application_1/admin/creation.dart';
 import 'package:flutter_application_1/admin/tasking.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
-import 'package:flutter_application_1/sidebar/trickbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomeadmin extends StatefulWidget {
@@ -193,12 +194,6 @@ class _MyHomeState extends State<MyHomeadmin> {
           number: "13",
           label: "ทำแล้ว",
         ),
-        _buildStatItem(
-          icon: Icons.format_quote,
-          iconColor: Colors.pink,
-          number: "60",
-          label: "เคล็ดลับระดับประเทศ",
-        ),
       ],
     );
   }
@@ -326,14 +321,28 @@ class _MyHomeState extends State<MyHomeadmin> {
             ),
 
             _buildMenuItem(
+              icon: Icons.checklist,
+              text: "ภารกิจที่เสร็จแล้ว",
+              iconColor: const Color(0xFFFF9800),
+              onTap: () {
+                Navigator.of(context).pop(); // ปิด Drawer ก่อน
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CompletedTasksPage()),
+                );
+              },
+            ),
+
+            _buildMenuItem(
               icon: Icons.check_circle,
               text: "ตรวจสอบภารกิจ",
               iconColor: const Color(0xFFFF9800),
               onTap: () {
-                Navigator.of(context).pop();
-                // TODO: ไปหน้าตรวจสอบภารกิจ
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("ไปหน้าตรวจสอบภารกิจ")),
+                Navigator.of(context).pop(); // ปิด Drawer/เมนู ก่อน
+                // ไปยังหน้า AuditScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuditScreen()),
                 );
               },
             ),
@@ -346,19 +355,6 @@ class _MyHomeState extends State<MyHomeadmin> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => Publicpage()),
-                );
-              },
-            ),
-            const Divider(), // เส้นแบ่ง
-            _buildMenuItem(
-              icon: Icons.format_quote,
-              text: "เคล็ดลับปฏิบัติจริง",
-              iconColor: const Color(0xFFE91E63),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TrickBar()),
                 );
               },
             ),

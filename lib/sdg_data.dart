@@ -8,6 +8,8 @@
     final String backgroundImage;
     final int activities;
     final int uploaded;
+    final String goalImage;
+    
 
     const SDGData({
       required this.number,
@@ -17,6 +19,7 @@
       required this.backgroundImage,
       required this.activities,
       required this.uploaded,
+      required this.goalImage,
     });
   }
 
@@ -29,6 +32,7 @@
       backgroundImage: 'assets/images/background1.jpg',
       activities: 10,
       uploaded: 5,
+      goalImage: 'assets/images/goal1.png',
     ),
     SDGData(
       number: 2,
@@ -38,6 +42,7 @@
       backgroundImage: 'assets/images/background2.jpg',
       activities: 12,
       uploaded: 7,
+      goalImage: 'assets/images/goal2.png',
     ),
     SDGData(
       number: 3,
@@ -47,6 +52,7 @@
       backgroundImage: 'assets/images/background3.jpg',
       activities: 8,
       uploaded: 3,
+      goalImage: 'assets/images/goal3.png',
     ),
     SDGData(
       number: 4,
@@ -56,6 +62,7 @@
       backgroundImage: 'assets/images/background4.jpg',
       activities: 15,
       uploaded: 10,
+      goalImage: 'assets/images/goal4.png',
     ),
     SDGData(
       number: 5,
@@ -65,6 +72,7 @@
       backgroundImage: 'assets/images/background5.jpg',
       activities: 9,
       uploaded: 6,
+      goalImage: 'assets/images/goal5.png',
     ),
     SDGData(
       number: 6,
@@ -74,6 +82,7 @@
       backgroundImage: 'assets/images/background6.jpg',
       activities: 11,
       uploaded: 5,
+      goalImage: 'assets/images/goal6.png',
     ),
     SDGData(
       number: 7,
@@ -83,6 +92,7 @@
       backgroundImage: 'assets/images/background7.jpg',
       activities: 13,
       uploaded: 8,
+      goalImage: 'assets/images/goal7.png',
     ),
     SDGData(
       number: 8,
@@ -92,6 +102,7 @@
       backgroundImage: 'assets/images/background8.jpg',
       activities: 14,
       uploaded: 9,
+      goalImage: 'assets/images/goal8.png',
     ),
     SDGData(
       number: 9,
@@ -101,6 +112,7 @@
       backgroundImage: 'assets/images/background9.jpg',
       activities: 7,
       uploaded: 4,
+      goalImage: 'assets/images/goal9.png',
     ),
     SDGData(
       number: 10,
@@ -110,6 +122,7 @@
       backgroundImage: 'assets/images/background10.jpg',
       activities: 6,
       uploaded: 3,
+      goalImage: 'assets/images/goal10.png',
     ),
     SDGData(
       number: 11,
@@ -119,6 +132,7 @@
       backgroundImage: 'assets/images/background11.jpg',
       activities: 12,
       uploaded: 7,
+      goalImage: 'assets/images/goal11.png',
     ),
     SDGData(
       number: 12,
@@ -128,6 +142,7 @@
       backgroundImage: 'assets/images/background12.jpg',
       activities: 9,
       uploaded: 4,
+      goalImage: 'assets/images/goal12.png',
     ),
     SDGData(
       number: 13,
@@ -137,6 +152,7 @@
       backgroundImage: 'assets/images/background13.jpg',
       activities: 10,
       uploaded: 6,
+      goalImage: 'assets/images/goal13.png',
     ),
     SDGData(
       number: 14,
@@ -146,6 +162,7 @@
       backgroundImage: 'assets/images/background14.jpg',
       activities: 8,
       uploaded: 5,
+      goalImage: 'assets/images/goal14.png',
     ),
     SDGData(
       number: 15,
@@ -155,6 +172,7 @@
       backgroundImage: 'assets/images/background15.jpg',
       activities: 7,
       uploaded: 4,
+      goalImage: 'assets/images/goal15.png',
     ),
     SDGData(
       number: 16,
@@ -164,6 +182,7 @@
       backgroundImage: 'assets/images/background16.jpg',
       activities: 11,
       uploaded: 6,
+      goalImage: 'assets/images/goal16.png',
     ),
     SDGData(
       number: 17,
@@ -173,5 +192,6 @@
       backgroundImage: 'assets/images/background17.jpg',
       activities: 13,
       uploaded: 8,
+      goalImage: 'assets/images/goal17.png',
     ),
   ];

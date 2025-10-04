@@ -9,7 +9,7 @@ class SDGBar extends StatelessWidget {
   Widget build(BuildContext context) {
     // ตัวอย่าง: ส่ง userId จริงจาก login หรือกำหนดค่าเริ่มต้น
     return MaterialApp(
-      home: SDGScreen(userId: 123), // ใส่ userId จริง
+      // ใส่ userId จริง
       debugShowCheckedModeBanner: false,
     );
   }
@@ -54,12 +54,7 @@ class _SDGScreenState extends State<SDGScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MyHome(), // ใช้ id จริง
-              ),
-            );
+            Navigator.pop(context); // <<-- แก้เป็น pop(context)
           },
         ),
         title: Row(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_application_1/custom_bottom_nav.dart'
     show CustomBottomNav;
+import 'package:flutter_application_1/history.dart';
 import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/upload.dart';
@@ -32,38 +33,58 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isLoading = true;
   File? _imageFile;
   String? _stickerPath;
+  int? totalActivities;
 
   @override
   void initState() {
     super.initState();
-    fetchProfile();
+    fetchProfileAndActivities();
   }
 
-  Future<void> fetchProfile() async {
-    print("Fetching profile for: '${widget.id}'"); // ดูว่า email ถูกส่งไปไหม
+  Future<void> fetchProfileAndActivities() async {
+    // ทำให้ State เป็น Loading ก่อน
+    if (!mounted) return;
+    setState(() {
+      isLoading = true;
+    });
 
-    final apiUrl = "http://10.0.2.2:3000/profile/${widget.id}";
     try {
-      final response = await http.get(Uri.parse(apiUrl));
-      print("Status code: ${response.statusCode}");
-      print("Response body: ${response.body}");
+      // เรียก API พร้อมกัน 2 ตัวเพื่อความรวดเร็ว
+      final profileFuture = http.get(
+        Uri.parse("http://10.0.2.2:3000/profile/${widget.id}"),
+      );
+      final activitiesFuture = http.get(
+        Uri.parse("http://10.0.2.2:3000/profile/${widget.id}/activities"),
+      );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          profileData = data['profile'];
-          isLoading = false;
-        });
+      final responses = await Future.wait([profileFuture, activitiesFuture]);
+
+      final profileResponse = responses[0];
+      final activitiesResponse = responses[1];
+
+      // จัดการข้อมูล Profile
+      if (profileResponse.statusCode == 200) {
+        final data = json.decode(profileResponse.body);
+        profileData = data['profile'];
       } else {
-        setState(() {
-          profileData = null;
-          isLoading = false;
-        });
+        profileData = null;
+      }
+
+      // จัดการข้อมูลจำนวน Activities
+      if (activitiesResponse.statusCode == 200) {
+        final data = json.decode(activitiesResponse.body);
+        totalActivities = data['total_activities'];
+      } else {
+        totalActivities = 0; // ถ้า error ให้เป็น 0
       }
     } catch (e) {
       print("Fetch error: $e");
+      profileData = null;
+      totalActivities = 0;
+    } finally {
+      // อัปเดต UI ครั้งเดียวหลังข้อมูลครบ
+      if (!mounted) return;
       setState(() {
-        profileData = null;
         isLoading = false;
       });
     }
@@ -97,13 +118,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   const SizedBox(height: 24),
                   _buildProfileAvatarSection(),
-                  const SizedBox(height: 32),
-                  _buildStatsSection(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 5),
                   _buildContactInfoCard(),
                   const SizedBox(height: 32),
                   _buildEditProfileButton(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
                   _buildSettingsList(),
                 ],
               ),
@@ -123,6 +142,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Column(
       children: [
+        // ... (ส่วนรูปโปรไฟล์เหมือนเดิม)
         GestureDetector(
           onTap: _showImagePickerDialog,
           child: Container(
@@ -165,8 +185,20 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 16),
         Text(
-          "${profileData!['firstname']} ${profileData!['lastname']}",
+          "${profileData!['username']}",
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+
+        // สร้างแถบแสดงสถิติ (Points และ Activities)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // แสดง Points
+            _buildStatItem(profileData!['points']?.toString() ?? '0', 'Points'),
+            // แสดงจำนวนกิจกรรม
+            _buildStatItem(totalActivities?.toString() ?? '0', 'Activities'),
+          ],
         ),
       ],
     );
@@ -307,18 +339,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // ส่วนแสดงสถิติ (โพสต์, ผู้ติดตาม, กำลังติดตาม)
-  Widget _buildStatsSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildStatItem('12', 'โพสต์'),
-        _buildStatItem('250', 'ผู้ติดตาม'),
-        _buildStatItem('180', 'กำลังติดตาม'),
-      ],
-    );
-  }
-
   Widget _buildStatItem(String count, String label) {
     return Column(
       children: [
@@ -384,23 +404,22 @@ class _ProfilePageState extends State<ProfilePage> {
               context,
               MaterialPageRoute(
                 builder: (context) => EditProfilePage(
-                  initialName:
-                      "${profileData!['firstname']} ${profileData!['lastname']}",
+                  userId: widget.id,
+                  initialName: profileData!['username'] ?? "",
                   initialEmail: profileData!['email'] ?? "",
                   initialPhone: profileData!['phonenumber'] ?? "",
                 ),
               ),
             ).then((result) {
-              if (result != null && result is Map<String, String>) {
+              // result คือข้อมูล profile ที่ได้จาก API
+              if (result != null && result is Map<String, dynamic>) {
+                // <-- แก้ไขประเภทข้อมูล
                 setState(() {
                   // อัปเดตค่าที่แก้ไขกลับมาจาก EditProfilePage
-                  profileData!['firstname'] = result['name']!.split(" ").first;
-                  profileData!['lastname'] =
-                      result['name']!.split(" ").length > 1
-                      ? result['name']!.split(" ").last
-                      : "";
-                  profileData!['email'] = result['email']!;
-                  profileData!['phonenumber'] = result['phone']!;
+                  // ซึ่งเป็นข้อมูลล่าสุดจาก Server
+                  profileData!['username'] = result['username'];
+                  profileData!['email'] = result['email'];
+                  profileData!['phonenumber'] = result['phonenumber'];
                 });
               }
             });
@@ -429,21 +448,17 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       children: [
         _buildSettingsItem(
-          icon: Icons.settings,
-          title: 'การตั้งค่า',
-          onTap: () {},
-        ),
-        const SizedBox(height: 8),
-        _buildSettingsItem(
-          icon: Icons.lock_outline,
-          title: 'ความเป็นส่วนตัว',
-          onTap: () {},
-        ),
-        const SizedBox(height: 8),
-        _buildSettingsItem(
-          icon: Icons.security,
-          title: 'ความปลอดภัย',
-          onTap: () {},
+          icon: Icons.history,
+          title: 'บันทึกกิจกรรม',
+          onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        // ส่ง userId ไปยัง HistoryPage
+        builder: (context) => HistoryPage(userId: widget.id),
+      ),
+    );
+  },
         ),
       ],
     );
@@ -482,12 +497,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
 // หน้าแก้ไขโปรไฟล์ (ตัวอย่าง)
 class EditProfilePage extends StatefulWidget {
+  final int userId;
   final String initialName;
   final String initialEmail;
   final String initialPhone;
 
   const EditProfilePage({
     Key? key,
+    required this.userId,
     required this.initialName,
     required this.initialEmail,
     required this.initialPhone,
@@ -519,14 +536,49 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
+    // <-- เปลี่ยนเป็น async
     if (_formKey.currentState!.validate()) {
+      // แสดง Loading Dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
       final updatedData = {
-        'name': _nameController.text,
+        'username': _nameController.text,
         'email': _emailController.text,
-        'phone': _phoneController.text,
+        'phonenumber': _phoneController.text,
       };
-      Navigator.pop(context, updatedData);
+
+      try {
+        final apiUrl = 'http://10.0.2.2:3000/profile/${widget.userId}';
+        final response = await http.put(
+          Uri.parse(apiUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: json.encode(updatedData),
+        );
+
+        Navigator.of(context).pop(); // ปิด Loading Dialog
+
+        if (response.statusCode == 200) {
+          final responseData = json.decode(response.body);
+          // ส่งข้อมูลที่อัปเดตแล้วกลับไปหน้า ProfilePage
+          Navigator.pop(context, responseData['profile']);
+        } else {
+          // แสดงข้อความ Error หาก API ไม่สำเร็จ
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปเดตข้อมูล')),
+          );
+        }
+      } catch (e) {
+        Navigator.of(context).pop(); // ปิด Loading Dialog
+        // แสดงข้อความ Error หากเชื่อมต่อไม่ได้
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('การเชื่อมต่อล้มเหลว: $e')));
+      }
     }
   }
 
@@ -557,7 +609,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 'เบอร์โทรศัพท์',
                 _phoneController,
                 Icons.phone,
-                isPhone: true,
+                isPhone: false,
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -611,162 +663,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
         return null;
       },
-    );
-  }
-}
-
-// หน้าการตั้งค่า (สร้างใหม่)
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
-
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  // สถานะสำหรับโหมดมืด
-  bool _isDarkMode = false;
-  // สถานะสำหรับเปิด/ปิดการแจ้งเตือน
-  bool _notificationsEnabled = true;
-
-  // สีสำหรับโหมดสว่างและโหมดมืด
-  static const Color _lightBackgroundColor = Color(0xFFFFFFFF);
-  static const Color _darkBackgroundColor = Color(0xFF121212);
-  static const Color _lightAppBarColor = Color(0xFF4CAF50);
-  static const Color _darkAppBarColor = Color(0xFF212121);
-  static const Color _lightTextColor = Color(0xFF000000);
-  static const Color _darkTextColor = Color(0xFFFFFFFF);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _isDarkMode
-          ? _darkBackgroundColor
-          : _lightBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'การตั้งค่า',
-          style: TextStyle(
-            color: _isDarkMode ? _darkTextColor : _lightTextColor,
-          ),
-        ),
-        backgroundColor: _isDarkMode ? _darkAppBarColor : _lightAppBarColor,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            SwitchListTile(
-              title: Text(
-                'โหมดมืด',
-                style: TextStyle(
-                  color: _isDarkMode ? _darkTextColor : _lightTextColor,
-                ),
-              ),
-              value: _isDarkMode,
-              onChanged: (bool value) {
-                setState(() {
-                  _isDarkMode = value;
-                });
-                // แสดงสถานะใน console (สามารถนำไปใช้จริงเพื่อเปลี่ยนธีมในแอปได้)
-                print('โหมดมืดถูกเปิดใช้งาน: $_isDarkMode');
-              },
-            ),
-            // เพิ่มการแจ้งเตือน
-            SwitchListTile(
-              title: Text(
-                'การแจ้งเตือน',
-                style: TextStyle(
-                  color: _isDarkMode ? _darkTextColor : _lightTextColor,
-                ),
-              ),
-              value: _notificationsEnabled,
-              onChanged: (bool value) {
-                setState(() {
-                  _notificationsEnabled = value;
-                });
-                print('สถานะการแจ้งเตือน: $_notificationsEnabled');
-              },
-            ),
-            // เพิ่มบันทึกกิจกรรม
-            ListTile(
-              title: Text(
-                'บันทึกกิจกรรม',
-                style: TextStyle(
-                  color: _isDarkMode ? _darkTextColor : _lightTextColor,
-                ),
-              ),
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                color: _isDarkMode ? _darkTextColor : _lightTextColor,
-              ),
-              onTap: () {
-                // เพิ่มการนำทางไปยังหน้าบันทึกกิจกรรม
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ActivityLogPage(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// หน้าความเป็นส่วนตัว (สร้างใหม่)
-class PrivacyPage extends StatelessWidget {
-  const PrivacyPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ความเป็นส่วนตัว'),
-        backgroundColor: const Color(0xFF4CAF50),
-      ),
-      body: const Center(
-        child: Text('หน้าความเป็นส่วนตัว', style: TextStyle(fontSize: 24)),
-      ),
-    );
-  }
-}
-
-// หน้าความปลอดภัย (สร้างใหม่)
-class SecurityPage extends StatelessWidget {
-  const SecurityPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('ความปลอดภัย'),
-        backgroundColor: const Color(0xFF4CAF50),
-      ),
-      body: const Center(
-        child: Text('หน้าความปลอดภัย', style: TextStyle(fontSize: 24)),
-      ),
-    );
-  }
-}
-
-// หน้าบันทึกกิจกรรม (สร้างใหม่)
-class ActivityLogPage extends StatelessWidget {
-  const ActivityLogPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('บันทึกกิจกรรม'),
-        backgroundColor: const Color(0xFF4CAF50),
-      ),
-      body: const Center(
-        child: Text('หน้าบันทึกกิจกรรม', style: TextStyle(fontSize: 24)),
-      ),
     );
   }
 }
