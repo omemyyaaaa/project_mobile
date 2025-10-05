@@ -296,11 +296,11 @@
     final TextEditingController _descriptionController = TextEditingController();
     final supabase = Supabase.instance.client;
       final Map<String, int> categoryMap = {
-  'เป้าหมายที่1': 1,
-  'เป้าหมายที่2': 2,
-  'เป้าหมายที่3': 3,
-  'เป้าหมายที่4': 4,
-  'เป้าหมายที่5': 5,
+  'SDGs1': 1,
+  'SDGs2': 2,
+  'SDGs3': 3,
+  'SDGs4': 4,
+  'SDGs5': 5,
 };
     
 
@@ -464,11 +464,23 @@ void _showSuccessDialog() {
                     icon: Icon(Icons.keyboard_arrow_down),
                     items:
                         [
-                          'เป้าหมายที่1',
-                          'เป้าหมายที่2',
-                          'เป้าหมายที่3',
-                          'เป้าหมายที่4',
-                          'เป้าหมายที่5',
+                          'SDGs1',
+                          'SDGs2',
+                          'SDGs3',
+                          'SDGs4',
+                          'SDGs5',
+                          'SDGs6',
+                          'SDGs7',
+                          'SDGs8',
+                          'SDGs9',
+                          'SDGs10',
+                          'SDGs11',
+                          'SDGs12',
+                          'SDGs13',
+                          'SDGs14',
+                          'SDGs15',
+                          'SDGs16',
+                          'SDGs17',
                         ].map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,

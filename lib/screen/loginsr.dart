@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/myhome.dart';
 import 'package:flutter_application_1/screen/forgotpasswordsr.dart';
@@ -15,6 +16,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final _secureStorage = const FlutterSecureStorage();
+  bool _isLoading = false;
 
   Future<void> login() async {
     final email = emailController.text.trim();
@@ -70,33 +73,53 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("เข้าสู่ระบบ")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: "อีเมล"),
+      body: Stack(
+        // ✨ ใช้ Stack เพื่อแสดง Loading Indicator
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center, // จัดให้อยู่กลางจอ
+              children: [
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: "อีเมล"),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: "รหัสผ่าน"),
+                ),
+                const SizedBox(height: 24),
+                // ✨ แก้ไขปุ่มเดิมให้ disable ตอน loading
+                ElevatedButton(
+                  onPressed: _isLoading ? null : login,
+                  child: const Text("เข้าสู่ระบบ"),
+                ),
+                TextButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ForgotpassScreen(),
+                            ),
+                          );
+                        },
+                  child: const Text("ลืมรหัสผ่าน?"),
+                ),
+              ],
             ),
-            SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(labelText: "รหัสผ่าน"),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(child: CircularProgressIndicator()),
             ),
-            SizedBox(height: 24),
-            ElevatedButton(onPressed: login, child: Text("เข้าสู่ระบบ")),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ForgotpassScreen()),
-                );
-              },
-              child: Text("ลืมรหัสผ่าน?"),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

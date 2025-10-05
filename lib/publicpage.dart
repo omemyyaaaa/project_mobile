@@ -341,6 +341,9 @@ extension on SDGData {
       activities: this.activities,
       uploaded: this.uploaded,
       goalImage: this.goalImage,
+      description: '',
+    targets: [
+    ],
     );
   }
 }

@@ -12,7 +12,9 @@ import 'package:path_provider/path_provider.dart';
 // import 'package:google_sign_in/google_sign_in.dart'; // ไม่ได้ใช้
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key}); // ✅ เพิ่ม const constructor เพื่อเป็นแนวปฏิบัติที่ดี
+  const RegisterScreen({
+    super.key,
+  }); // ✅ เพิ่ม const constructor เพื่อเป็นแนวปฏิบัติที่ดี
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -30,7 +32,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   File? _profileImage;
   String? _stickerPath;
   final ImagePicker _picker = ImagePicker();
-  final _formKey = GlobalKey<FormState>(); // ✅ เพิ่ม FormKey สำหรับ validation
+  final _formKey = GlobalKey<FormState>();
+  final _emailFieldKey = GlobalKey<FormFieldState>(); 
+  final FocusNode _emailFocusNode = FocusNode();
+  bool _isEmailChecking = false;
+  bool? _isEmailValid;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _onEmailFocusChange() {
+    if (!_emailFocusNode.hasFocus) {
+      // สั่งให้ validate เฉพาะช่องอีเมล
+      _emailFieldKey.currentState?.validate();
+    }
+  }
 
   @override
   void dispose() {
@@ -41,6 +59,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     phoneController.dispose();
     dobController.dispose();
     super.dispose();
+  }
+
+  Future<void> _validateEmailRealtime(String email) async {
+    // ตรวจสอบ format เบื้องต้นก่อนส่ง จะได้ไม่เปลือง API call
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _isEmailValid = false;
+      });
+      _formKey.currentState?.validate();
+      return;
+    }
+
+    setState(() {
+      _isEmailChecking = true;
+      _isEmailValid = null; // รีเซ็ตสถานะก่อนเริ่มเช็ค
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:3000/api/auth/validate-email'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        _isEmailValid = data['isValid'];
+      });
+
+    } catch(e) {
+      // หาก API error, เราจะถือว่าผ่านไปก่อนเพื่อไม่ให้ user สมัครไม่ได้
+      setState(() {
+        _isEmailValid = false; 
+      });
+    } finally {
+      setState(() {
+        _isEmailChecking = false; 
+        _emailFieldKey.currentState?.validate();
+      });
+    }
   }
 
   Future<void> pickImage(ImageSource source) async {
@@ -136,11 +194,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("รหัสผ่านไม่ตรงกัน")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("รหัสผ่านไม่ตรงกัน")));
       return;
     }
 
@@ -181,14 +238,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       Navigator.of(context).pop(); // ปิด loading dialog
 
-      if (response.statusCode == 200 && data["success"]) {
+      if (response.statusCode == 201 && data["success"]) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("สมัครสมาชิกสำเร็จ")),
+          const SnackBar(content: Text("สมัครสมาชิกสำเร็จ! กำลังนำท่านไปหน้าเข้าสู่ระบบ")),
         );
-        // ✅ แก้ไขตรงนี้: เพิ่ม const หน้า HomeScreen()
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()), // << แก้ไขแล้ว
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -210,12 +267,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(title: const Text("สร้างบัญชี")), // ✅ เพิ่ม const
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Form( // ✅ เพิ่ม Form widget สำหรับ validation
+        child: Form(
+          // ✅ เพิ่ม Form widget สำหรับ validation
           key: _formKey,
           child: Column(
             children: [
               const SizedBox(height: 16), // ✅ เพิ่ม const
-
               // รูปโปรไฟล์
               GestureDetector(
                 onTap: pickProfileImage,
@@ -225,28 +282,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   backgroundImage: _profileImage != null
                       ? FileImage(_profileImage!)
                       : _stickerPath != null
-                          ? AssetImage(_stickerPath!) as ImageProvider
-                          : null,
+                      ? AssetImage(_stickerPath!) as ImageProvider
+                      : null,
                   child: (_profileImage == null && _stickerPath == null)
-                      ? const Icon(Icons.add_a_photo, size: 40, color: Colors.white) // ✅ เพิ่ม const
+                      ? const Icon(
+                          Icons.add_a_photo,
+                          size: 40,
+                          color: Colors.white,
+                        ) // ✅ เพิ่ม const
                       : null,
                 ),
               ),
-              const SizedBox(height: 16), // ✅ เพิ่ม const
-              _buildTextField( // ✅ ใช้ _buildTextField
+              const SizedBox(height: 16),
+              TextFormField(
+                key: _emailFieldKey, // ผูก Key ของช่องอีเมล
                 controller: emailController,
-                labelText: "อีเมล",
+                focusNode: _emailFocusNode, // ผูก FocusNode
                 keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: "อีเมล",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  // แสดงสถานะการตรวจสอบที่ท้ายช่อง
+                  suffixIcon: _isEmailChecking
+                      ? const Padding(padding: EdgeInsets.all(12.0), child: CupertinoActivityIndicator())
+                      : _isEmailValid != null
+                          ? Icon(
+                              _isEmailValid! ? Icons.check_circle : Icons.error,
+                              color: _isEmailValid! ? Colors.green : Colors.red,
+                            )
+                          : null,
+                ),
                 validator: (value) {
+                  // เมื่อ validate ให้เรียก API (ถ้าจำเป็น)
+                  if (_emailFocusNode.hasFocus == false && _isEmailChecking == false && _isEmailValid == null) {
+                     _validateEmailRealtime(value ?? "");
+                  }
+
                   if (value == null || value.isEmpty) {
                     return 'กรุณากรอกอีเมล';
                   }
                   if (!value.contains('@')) {
-                    return 'กรุณากรอกอีเมลที่ถูกต้อง';
+                    return 'รูปแบบอีเมลไม่ถูกต้อง';
                   }
-                  return null;
+                  if (_isEmailValid == false) {
+                    return 'อีเมลนี้อาจใช้งานไม่ได้จริง';
+                  }
+                  return null; // ถ้าทุกอย่างถูกต้อง
                 },
               ),
+              
               const SizedBox(height: 16), // ✅ เพิ่ม const
               _buildTextField(
                 controller: passwordController,
@@ -294,14 +380,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 labelText: "เบอร์โทร",
                 keyboardType: TextInputType.phone,
                 validator: (value) {
-                  if (value != null && value.isNotEmpty && (value.length < 9 || value.length > 10)) {
+                  if (value != null &&
+                      value.isNotEmpty &&
+                      (value.length < 9 || value.length > 10)) {
                     return 'กรุณากรอกเบอร์โทรที่ถูกต้อง';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16), // ✅ เพิ่ม const
-              _buildDateField( // ✅ ใช้ _buildDateField
+              _buildDateField(
+                // ✅ ใช้ _buildDateField
                 controller: dobController,
                 labelText: "วันเกิด",
               ),
@@ -310,7 +399,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: registerUser,
-                  child: const Text("สร้างบัญชี", style: TextStyle(fontSize: 18)), // ✅ เพิ่ม const
+                  child: const Text(
+                    "สร้างบัญชี",
+                    style: TextStyle(fontSize: 18),
+                  ), // ✅ เพิ่ม const
                 ),
               ),
               const SizedBox(height: 16), // ✅ เพิ่ม const
@@ -318,10 +410,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onPressed: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()), // ✅ เพิ่ม const
+                    MaterialPageRoute(
+                      builder: (_) => const LoginScreen(),
+                    ), // ✅ เพิ่ม const
                   );
                 },
-                child: const Text("มีบัญชีอยู่แล้ว? เข้าสู่ระบบ"), // ✅ เพิ่ม const
+                child: const Text(
+                  "มีบัญชีอยู่แล้ว? เข้าสู่ระบบ",
+                ), // ✅ เพิ่ม const
               ),
             ],
           ),
@@ -343,9 +439,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       obscureText: obscureText,
       decoration: InputDecoration(
         labelText: labelText,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       validator: validator,
     );
@@ -361,9 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       readOnly: true,
       decoration: InputDecoration(
         labelText: labelText,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         suffixIcon: const Icon(Icons.calendar_today), // ✅ เพิ่ม icon ปฏิทิน
       ),
       onTap: () {

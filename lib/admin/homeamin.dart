@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/audit_screen.dart';
 import 'package:flutter_application_1/admin/completed.dart';
 import 'package:flutter_application_1/admin/creation.dart';
+import 'package:flutter_application_1/admin/pubadmin.dart';
 import 'package:flutter_application_1/admin/tasking.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
@@ -354,7 +355,7 @@ class _MyHomeState extends State<MyHomeadmin> {
                 Navigator.of(context).pop(); // ปิด Drawer ก่อน
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => Publicpage()),
+                  MaterialPageRoute(builder: (context) => PublicAdminPage()),
                 );
               },
             ),

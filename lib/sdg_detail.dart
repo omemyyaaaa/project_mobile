@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/inforsdg.dart';
 import 'package:flutter_application_1/task.dart';
 import 'package:flutter_application_1/upload.dart';
 import 'package:http/http.dart' as http;
@@ -126,7 +127,7 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                           Text(
                             '${data.number}',
                             style: const TextStyle(
-                              fontSize: 48,
+                              fontSize: 58,
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -134,7 +135,7 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                           Text(
                             data.title,
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 25,
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -142,7 +143,7 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                           Text(
                             data.subtitle,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               color: Colors.white,
                             ),
                           ),
@@ -212,6 +213,17 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                                   'เกี่ยวกับ',
                                   Icons.edit_note,
                                   data.color.withOpacity(0.7),
+                                  // --- เพิ่ม onTap ตรงนี้ ---
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => SdgInfoPage(
+                                          data: data,
+                                        ), // ส่งข้อมูล SDG ไปยังหน้าใหม่
+                                      ),
+                                    );
+                                  },
                                 ),
                                 _buildBox(
                                   context,
@@ -270,13 +282,13 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.white, size: 20),
+            Icon(icon, color: Colors.white, size: 30),
             const SizedBox(width: 8),
             Text(
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
