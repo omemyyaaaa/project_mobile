@@ -36,7 +36,7 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
   Future<void> _fetchSdgSummary() async {
     try {
       final url = Uri.parse(
-        'http://10.153.27.172:3000/tasks/sdg/${widget.sdgNumber}/summary',
+        'http://10.0.2.2:3000/tasks/sdg/${widget.sdgNumber}/summary',
       );
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
@@ -177,7 +177,7 @@ class _SDGDetailPageState extends State<SDGDetailPage> {
                           // ✅ 5. แก้ไขส่วนแสดงผลตัวเลข
                           Align(
                             alignment: Alignment.bottomCenter,
-                            child: SizedBox(
+                            child: Container(
                               height: 200,
                               child: Row(
                                 mainAxisAlignment:

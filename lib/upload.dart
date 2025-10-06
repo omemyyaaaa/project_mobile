@@ -9,7 +9,7 @@
   class UploadPage extends StatefulWidget {
     final int userId; // รับจาก ProfilePage
 
-  const UploadPage({super.key, required this.userId});
+  const UploadPage({Key? key, required this.userId}) : super(key: key);
 
     @override
     _UploadPageState createState() => _UploadPageState();
@@ -281,10 +281,10 @@
   
 
   const UploadDetailsPage({
-    super.key,
+    Key? key,
     required this.selectedImage,
     required this.userId,
-  });
+  }) : super(key: key);
 
 
     @override
@@ -308,7 +308,7 @@
   // สมมติคุณมี email ของผู้ใช้จาก login
   final userEmail = 'user@example.com'; // <-- เปลี่ยนเป็น email จริง
 
-  var uri = Uri.parse("http://10.153.27.172:3000/upload");
+  var uri = Uri.parse("http://10.0.2.2:3000/upload");
   var request = http.MultipartRequest('POST', uri);
   
 request.fields['userId'] = widget.userId.toString();

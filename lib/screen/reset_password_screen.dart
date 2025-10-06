@@ -32,8 +32,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     });
 
     try {
-      // *** URL ของ Backend (สำหรับ Android Emulator ใช้ 10.153.27.172) ***
-      const String baseUrl = 'http://10.153.27.172:3000'; 
+      // *** URL ของ Backend (สำหรับ Android Emulator ใช้ 10.0.2.2) ***
+      const String baseUrl = 'http://10.0.2.2:3000'; 
       final url = Uri.parse('$baseUrl/api/auth/reset-password'); // Endpoint ที่สร้างไว้ใน Node.js
 
       final response = await http.post(

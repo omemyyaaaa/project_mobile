@@ -6,8 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 
 class TaskCreationScreen extends StatefulWidget {
-  const TaskCreationScreen({super.key});
-
   @override
   _TaskCreationScreenState createState() => _TaskCreationScreenState();
 }
@@ -27,7 +25,7 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
   File? _imageFile;
 
   final List<String> _sdgList = List.generate(17, (i) => "SDG${i + 1}");
-  final List<String> _selectedSdgs = [];
+  List<String> _selectedSdgs = [];
   final ImagePicker _picker = ImagePicker();
   bool _sdgDropdownOpen = false;
 
@@ -66,7 +64,7 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
       // 3. แก้ไข URL ของ API ให้ถูกต้องตามที่เราได้ทำไว้
       var request = http.MultipartRequest(
         "POST",
-        Uri.parse("http://10.153.27.172:3000/create/create"),
+        Uri.parse("http://10.0.2.2:3000/create/create"),
       );
 
       // 4. เพิ่ม title และ location เข้าไปใน request.fields

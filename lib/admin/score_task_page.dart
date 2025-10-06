@@ -32,7 +32,7 @@ class _ScoreTaskPageState extends State<ScoreTaskPage> {
     try {
       final taskId = widget.task['task_id'];
       final url = Uri.parse(
-        'http://10.153.27.172:3000/api/participation/task/$taskId',
+        'http://10.0.2.2:3000/api/participation/task/$taskId',
       );
       final response = await http.get(url);
 
@@ -75,7 +75,7 @@ class _ScoreTaskPageState extends State<ScoreTaskPage> {
 
       // --- 🔽 ส่วนสำคัญที่ใช้ยิง API 🔽 ---
       try {
-        final url = Uri.parse('http://10.153.27.172:3000/api/participation/award');
+        final url = Uri.parse('http://10.0.2.2:3000/api/participation/award');
         final response = await http.post(
           url,
           headers: {'Content-Type': 'application/json; charset=UTF-8'},
@@ -138,7 +138,7 @@ class _ScoreTaskPageState extends State<ScoreTaskPage> {
         String? fullUrl;
         if (participant['profile_url'] != null &&
             participant['profile_url'].isNotEmpty) {
-          fullUrl = "http://10.153.27.172:3000${participant['profile_url']}";
+          fullUrl = "http://10.0.2.2:3000${participant['profile_url']}";
         }
 
         return CheckboxListTile(

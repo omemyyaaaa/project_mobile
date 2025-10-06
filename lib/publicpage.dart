@@ -7,8 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -50,7 +48,7 @@ class _PublicpageState extends State<Publicpage> {
     });
 
     try {
-      final url = Uri.parse('http://10.153.27.172:3000/posts');
+      final url = Uri.parse('http://10.0.2.2:3000/posts');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -126,7 +124,7 @@ class _PublicpageState extends State<Publicpage> {
   // Widget สำหรับสร้าง Card ของแต่ละโพสต์
   Widget _buildPostCard(Map<String, dynamic> post) {
     // สร้าง URL ที่สมบูรณ์สำหรับรูปภาพ
-    final String baseUrl = "http://10.153.27.172:3000";
+    final String baseUrl = "http://10.0.2.2:3000";
     final String profileUrl = post['profile_url'] != null
         ? baseUrl + post['profile_url']
         : '';
@@ -337,12 +335,12 @@ extension on SDGData {
     return SDGData(
       number: number ?? this.number,
       title: title ?? this.title,
-      subtitle: subtitle,
-      color: color,
-      backgroundImage: backgroundImage,
-      activities: activities,
-      uploaded: uploaded,
-      goalImage: goalImage,
+      subtitle: this.subtitle,
+      color: this.color,
+      backgroundImage: this.backgroundImage,
+      activities: this.activities,
+      uploaded: this.uploaded,
+      goalImage: this.goalImage,
       description: '',
     targets: [
     ],

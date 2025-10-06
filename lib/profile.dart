@@ -16,7 +16,7 @@ import 'package:path_provider/path_provider.dart';
 class ProfilePage extends StatefulWidget {
   final int id; // ได้มาจากตอน Login
 
-  const ProfilePage({super.key, required this.id});
+  const ProfilePage({Key? key, required this.id}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -51,10 +51,10 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       // เรียก API พร้อมกัน 2 ตัวเพื่อความรวดเร็ว
       final profileFuture = http.get(
-        Uri.parse("http://10.153.27.172:3000/profile/${widget.id}"),
+        Uri.parse("http://10.0.2.2:3000/profile/${widget.id}"),
       );
       final activitiesFuture = http.get(
-        Uri.parse("http://10.153.27.172:3000/profile/${widget.id}/activities"),
+        Uri.parse("http://10.0.2.2:3000/profile/${widget.id}/activities"),
       );
 
       final responses = await Future.wait([profileFuture, activitiesFuture]);
@@ -137,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileAvatarSection() {
     final String fullProfileUrl =
         profileData?['profile_url'] != null && profileData!['profile_url'] != ""
-        ? "http://10.153.27.172:3000${profileData!['profile_url']}"
+        ? "http://10.0.2.2:3000${profileData!['profile_url']}"
         : "";
 
     return Column(
@@ -313,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     try {
-      final uri = Uri.parse('http://10.153.27.172:3000/profile/upload/$userId');
+      final uri = Uri.parse('http://10.0.2.2:3000/profile/upload/$userId');
       final request = http.MultipartRequest('POST', uri);
       request.files.add(
         await http.MultipartFile.fromPath('profile', imageFile.path),
@@ -503,12 +503,12 @@ class EditProfilePage extends StatefulWidget {
   final String initialPhone;
 
   const EditProfilePage({
-    super.key,
+    Key? key,
     required this.userId,
     required this.initialName,
     required this.initialEmail,
     required this.initialPhone,
-  });
+  }) : super(key: key);
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
@@ -553,7 +553,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       };
 
       try {
-        final apiUrl = 'http://10.153.27.172:3000/profile/${widget.userId}';
+        final apiUrl = 'http://10.0.2.2:3000/profile/${widget.userId}';
         final response = await http.put(
           Uri.parse(apiUrl),
           headers: {'Content-Type': 'application/json'},

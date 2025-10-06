@@ -7,8 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class Tasking extends StatelessWidget {
-  const Tasking({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -21,8 +19,6 @@ class Tasking extends StatelessWidget {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -40,7 +36,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchTasks() async {
     try {
       // The endpoint is correct, it fetches all tasks
-      final response = await http.get(Uri.parse("http://10.153.27.172:3000/tasks/"));
+      final response = await http.get(Uri.parse("http://10.0.2.2:3000/tasks/"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -72,7 +68,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _completeTask(int taskId) async {
     // สร้าง URL สำหรับ API endpoint ที่จะอัปเดตสถานะ
-    final url = Uri.parse('http://10.153.27.172:3000/tasks/$taskId/complete');
+    final url = Uri.parse('http://10.0.2.2:3000/tasks/$taskId/complete');
 
     try {
       // ส่งคำขอ PATCH เพื่ออัปเดตสถานะ
