@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/homeamin.dart';
-import 'package:flutter_application_1/myhome.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminLoginScreen extends StatefulWidget {

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_application_1/screen/homesr.dart'; // ✅ ยืนยันว่า import ถูกต้องตามชื่อไฟล์ที่คุณให้มา (homesr.dart)
+// ✅ ยืนยันว่า import ถูกต้องตามชื่อไฟล์ที่คุณให้มา (homesr.dart)
 import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -78,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/auth/validate-email'),
+        Uri.parse('http://10.153.27.172:3000/api/auth/validate-email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
@@ -208,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    var uri = Uri.parse("http://10.0.2.2:3000/register");
+    var uri = Uri.parse("http://10.153.27.172:3000/register");
     var request = http.MultipartRequest('POST', uri);
 
     request.fields['email'] = emailController.text;

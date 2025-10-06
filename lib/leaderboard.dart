@@ -37,7 +37,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   Future<List<dynamic>> _fetchLeaderboard() async {
     // ... (โค้ดส่วนนี้เหมือนเดิม)
     try {
-      final url = Uri.parse('http://10.0.2.2:3000/api/leaderboard');
+      final url = Uri.parse('http://10.153.27.172:3000/api/leaderboard');
       final response = await http.get(url).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
@@ -55,7 +55,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     // ... (โค้ดส่วนนี้เหมือนเดิม)
     try {
       final url = Uri.parse(
-        'http://10.0.2.2:3000/api/leaderboard/user/$userId',
+        'http://10.153.27.172:3000/api/leaderboard/user/$userId',
       );
       final response = await http.get(url).timeout(const Duration(seconds: 15));
 
@@ -101,7 +101,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
     String? fullUrl;
     if (profileUrl != null && profileUrl.isNotEmpty) {
-      fullUrl = "http://10.0.2.2:3000$profileUrl";
+      fullUrl = "http://10.153.27.172:3000$profileUrl";
     }
 
     return Card(
@@ -224,7 +224,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
                     String? fullUrl;
                     if (profileUrl != null && profileUrl.isNotEmpty) {
-                      fullUrl = "http://10.0.2.2:3000$profileUrl";
+                      fullUrl = "http://10.153.27.172:3000$profileUrl";
                     }
 
                     final bool isCurrentUser =

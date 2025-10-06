@@ -3,12 +3,9 @@ import 'package:flutter_application_1/admin/adminlogin.dart';
 import 'package:flutter_application_1/custom_bottom_nav.dart';
 import 'package:flutter_application_1/leaderboard.dart';
 import 'package:flutter_application_1/profile.dart';
-import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
-import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
 import 'package:flutter_application_1/sdgbar.dart';
-import 'package:flutter_application_1/upload.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -36,7 +33,7 @@ class _MyHomeState extends State<MyHome> {
   }
 
   Future<void> _fetchCompletedTasksCount() async {
-    final url = Uri.parse('http://10.0.2.2:3000/tasks/status/completed');
+    final url = Uri.parse('http://10.153.27.172:3000/tasks/status/completed');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -63,8 +60,8 @@ class _MyHomeState extends State<MyHome> {
   }
 
   Future<void> _fetchUpcomingTasksCount() async {
-    // ใช้ 10.0.2.2 สำหรับ Android Emulator
-    final url = Uri.parse('http://10.0.2.2:3000/tasks/status/upcoming');
+    // ใช้ 10.153.27.172 สำหรับ Android Emulator
+    final url = Uri.parse('http://10.153.27.172:3000/tasks/status/upcoming');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -654,7 +651,7 @@ class _ProfileInfoWidgetState extends State<ProfileInfoWidget> {
   }
 
   Future<void> fetchProfile() async {
-    final apiUrl = "http://10.0.2.2:3000/profile/${widget.userId}";
+    final apiUrl = "http://10.153.27.172:3000/profile/${widget.userId}";
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
@@ -689,7 +686,7 @@ class _ProfileInfoWidgetState extends State<ProfileInfoWidget> {
 
     final String profileUrl =
         profileData?['profile_url'] != null && profileData!['profile_url'] != ""
-        ? "http://10.0.2.2:3000${profileData!['profile_url']}"
+        ? "http://10.153.27.172:3000${profileData!['profile_url']}"
         : "";
     return Row(
       children: [

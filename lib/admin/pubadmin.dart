@@ -30,7 +30,7 @@ class _PublicAdminPageState extends State<PublicAdminPage> {
     });
 
     try {
-      final url = Uri.parse('http://10.0.2.2:3000/posts');
+      final url = Uri.parse('http://10.153.27.172:3000/posts');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -58,7 +58,7 @@ class _PublicAdminPageState extends State<PublicAdminPage> {
 
   // ฟังก์ชันสำหรับ "บล็อก" โพสต์
   Future<void> _blockPost(int postId) async {
-    final url = Uri.parse('http://10.0.2.2:3000/posts/$postId/block');
+    final url = Uri.parse('http://10.153.27.172:3000/posts/$postId/block');
 
     try {
       // ใช้ http.patch เพื่อส่งคำขออัปเดตสถานะ
@@ -176,7 +176,7 @@ class _PublicAdminPageState extends State<PublicAdminPage> {
   }
 
   Widget _buildPostCard(Map<String, dynamic> post) {
-    final String baseUrl = "http://10.0.2.2:3000";
+    final String baseUrl = "http://10.153.27.172:3000";
     final String profileUrl = post['profile_url'] != null ? baseUrl + post['profile_url'] : '';
     final String imageUrl = post['image_url'] ?? '';
     final String taskName = post['tasks']?.toString() ?? 'กิจกรรม';
@@ -378,12 +378,12 @@ extension on SDGData {
     return SDGData(
       number: number ?? this.number,
       title: title ?? this.title,
-      subtitle: this.subtitle,
-      color: this.color,
-      backgroundImage: this.backgroundImage,
-      activities: this.activities,
-      uploaded: this.uploaded,
-      goalImage: this.goalImage,
+      subtitle: subtitle,
+      color: color,
+      backgroundImage: backgroundImage,
+      activities: activities,
+      uploaded: uploaded,
+      goalImage: goalImage,
       description: '',
       targets: [],
     );

@@ -19,8 +19,8 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
   bool _isOtpSent = false;
   bool _isLoading = false; // state สำหรับ loading
 
-  // *** URL ของ Backend (สำหรับ Android Emulator ใช้ 10.0.2.2 เพื่อชี้มาที่ localhost ของคอม) ***
-  final String _baseUrl = 'http://10.0.2.2:3000';
+  // *** URL ของ Backend (สำหรับ Android Emulator ใช้ 10.153.27.172 เพื่อชี้มาที่ localhost ของคอม) ***
+  final String _baseUrl = 'http://10.153.27.172:3000';
 
   // --- แก้ไขฟังก์ชันนี้ ---
   Future<void> _sendOtp() async {

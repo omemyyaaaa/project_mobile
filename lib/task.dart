@@ -34,7 +34,7 @@ class _UserTaskListPageState extends State<UserTaskListPage> {
   Future<void> fetchTasksBySdg() async {
     try {
       // ✅ เรียก API endpoint ใหม่ที่กรองตาม SDG
-      final url = Uri.parse('http://10.0.2.2:3000/tasks/sdg/${widget.sdgId}');
+      final url = Uri.parse('http://10.153.27.172:3000/tasks/sdg/${widget.sdgId}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -67,9 +67,9 @@ class _UserTaskListPageState extends State<UserTaskListPage> {
 
   Future<void> _joinTask(int taskId) async {
     // 🚨🚨 แก้ไข URL ตรงนี้ให้เป็น /api/participation/join 🚨🚨
-    final url = Uri.parse('http://10.0.2.2:3000/api/participation/join');
+    final url = Uri.parse('http://10.153.27.172:3000/api/participation/join');
 
-    // 💡 หากใช้ iOS Simulator หรือ Device จริง ให้เปลี่ยน 10.0.2.2 เป็น IP ของเครื่องคอมพิวเตอร์คุณ
+    // 💡 หากใช้ iOS Simulator หรือ Device จริง ให้เปลี่ยน 10.153.27.172 เป็น IP ของเครื่องคอมพิวเตอร์คุณ
     //    เช่น final url = Uri.parse('http://192.168.1.xxx:3000/api/participation/join');
 
     try {

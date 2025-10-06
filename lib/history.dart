@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/admin/pubadmin.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -35,7 +34,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
     try {
       // สร้าง URL ไปยัง API endpoint ที่เราสร้างไว้ใน history.js
-      final url = Uri.parse('http://10.0.2.2:3000/history/${widget.userId}');
+      final url = Uri.parse('http://10.153.27.172:3000/history/${widget.userId}');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -63,7 +62,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _publishPost(int uploadId) async {
-    final url = Uri.parse('http://10.0.2.2:3000/history/$uploadId/publish');
+    final url = Uri.parse('http://10.153.27.172:3000/history/$uploadId/publish');
 
     try {
       final response = await http.patch(url); // ใช้ http.patch

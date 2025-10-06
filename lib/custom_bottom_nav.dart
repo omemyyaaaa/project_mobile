@@ -9,10 +9,10 @@ class CustomBottomNav extends StatelessWidget {
   final int userId; // เพิ่ม userId
 
   const CustomBottomNav({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.userId, // ต้องรับจาก parent
-  }) : super(key: key);
+  });
 
   static const Color _primaryGreen = Color(0xFF4CAF50);
 

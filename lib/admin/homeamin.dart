@@ -4,10 +4,8 @@ import 'package:flutter_application_1/admin/completed.dart';
 import 'package:flutter_application_1/admin/creation.dart';
 import 'package:flutter_application_1/admin/pubadmin.dart';
 import 'package:flutter_application_1/admin/tasking.dart';
-import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomeadmin extends StatefulWidget {
   const MyHomeadmin({super.key});

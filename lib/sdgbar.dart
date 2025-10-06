@@ -5,6 +5,8 @@ import 'package:flutter_application_1/sdg_detail.dart' show SDGDetailPage;
 void main() => runApp(SDGBar());
 
 class SDGBar extends StatelessWidget {
+  const SDGBar({super.key});
+
   @override
   Widget build(BuildContext context) {
     // ตัวอย่าง: ส่ง userId จริงจาก login หรือกำหนดค่าเริ่มต้น
@@ -18,7 +20,7 @@ class SDGBar extends StatelessWidget {
 class SDGScreen extends StatefulWidget {
   final int userId; // เพิ่ม userId ที่นี่
 
-  const SDGScreen({Key? key, required this.userId}) : super(key: key);
+  const SDGScreen({super.key, required this.userId});
 
   @override
   _SDGScreenState createState() => _SDGScreenState();

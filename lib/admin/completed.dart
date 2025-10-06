@@ -27,7 +27,7 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
     if (mounted) setState(() => isLoading = true);
     try {
       // ✅ **Corrected the URL to match your API route (removed '/api')**
-      final response = await http.get(Uri.parse("http://10.0.2.2:3000/tasks/"));
+      final response = await http.get(Uri.parse("http://10.153.27.172:3000/tasks/"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -112,7 +112,7 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Section for Image
-                Container(
+                SizedBox(
                   height: 160,
                   width: double.infinity,
                   child: ClipRRect(

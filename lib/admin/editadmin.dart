@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class EditTaskScreen extends StatefulWidget {
   final Map<String, dynamic> taskData;
 
-  const EditTaskScreen({Key? key, required this.taskData}) : super(key: key);
+  const EditTaskScreen({super.key, required this.taskData});
 
   @override
   State<EditTaskScreen> createState() => _EditTaskScreenState();
@@ -60,7 +60,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     try {
       final taskId = widget.taskData['task_id'];
-      final url = Uri.parse("http://10.0.2.2:3000/api/tasks/$taskId");
+      final url = Uri.parse("http://10.153.27.172:3000/api/tasks/$taskId");
       final response = await http.delete(url);
 
       if (!mounted) return; // ตรวจสอบว่า widget ยังอยู่ใน tree
@@ -153,7 +153,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       var request = http.MultipartRequest(
         "PUT",
         Uri.parse(
-          "http://10.0.2.2:3000/api/tasks/$taskId",
+          "http://10.153.27.172:3000/api/tasks/$taskId",
         ), // <--- ลบ /edit ออก
       );
 

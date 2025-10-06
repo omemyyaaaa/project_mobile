@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final _secureStorage = const FlutterSecureStorage();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   Future<void> login() async {
     final email = emailController.text.trim();
@@ -29,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://10.0.2.2:3000/login"),
+        Uri.parse("http://10.153.27.172:3000/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": email, "password": password}),
       );

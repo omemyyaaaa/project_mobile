@@ -30,7 +30,7 @@ class _AuditScreenState extends State<AuditScreen> {
     });
     try {
       final response = await http.get(
-        Uri.parse("http://10.0.2.2:3000/api/audit/all"),
+        Uri.parse("http://10.153.27.172:3000/api/audit/all"),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -140,7 +140,7 @@ class _AuditScreenState extends State<AuditScreen> {
     try {
       // เรียก Endpoint สำหรับ complete
       final url = Uri.parse(
-        "http://10.0.2.2:3000/api/audit/$uploadId/complete",
+        "http://10.153.27.172:3000/api/audit/$uploadId/complete",
       );
       final response = await http.post(
         url,

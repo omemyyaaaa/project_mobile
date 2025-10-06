@@ -43,8 +43,8 @@ class _CalenBarState extends State<CalenBar> {
     });
 
     try {
-      // ใช้ 10.0.2.2 สำหรับ Android Emulator เพื่อเชื่อมต่อกับ localhost ของเครื่องคอม
-      final url = Uri.parse('http://10.0.2.2:3000/api/calendar?year=$year&month=$month');
+      // ใช้ 10.153.27.172 สำหรับ Android Emulator เพื่อเชื่อมต่อกับ localhost ของเครื่องคอม
+      final url = Uri.parse('http://10.153.27.172:3000/api/calendar?year=$year&month=$month');
       final response = await http.get(url).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
