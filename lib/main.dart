@@ -1,4 +1,5 @@
   import 'package:flutter/material.dart';
+import 'package:flutter_application_1/myhome.dart';
   import 'package:flutter_application_1/screen/homesr.dart';
   import 'package:supabase_flutter/supabase_flutter.dart';
   import 'package:intl/date_symbol_data_local.dart';
@@ -22,10 +23,15 @@ Future<void> main() async {
     Widget build(BuildContext context) {
       return MaterialApp(
         title: 'Flutter Demo',
+        initialRoute: '/', // สมมติว่าหน้าแรกคือ Login
+      routes: {
+        '/': (context) => HomeScreen(), // หน้า Login ของคุณ
+        '/home': (context) => const MyHome(), // <<--- ตั้งชื่อให้ MyHome ตรงนี้
+        // ... routes อื่นๆ ของคุณ
+      },
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home:HomeScreen(),
         debugShowCheckedModeBanner: false,
       );
     }

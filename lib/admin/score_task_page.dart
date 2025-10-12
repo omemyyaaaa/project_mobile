@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
 
 class ScoreTaskPage extends StatefulWidget {
   // 1. รับข้อมูล task ทั้งหมดเข้ามา เพื่อให้รู้ว่ากำลังให้คะแนนภารกิจไหน
@@ -52,6 +53,12 @@ class _ScoreTaskPageState extends State<ScoreTaskPage> {
       if (mounted) {
         setState(() {
           _isParticipantsLoading = false;
+          QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถดึงรายชื่อผู้เข้าร่วมได้',
+        );
         });
       }
     }
@@ -64,11 +71,10 @@ class _ScoreTaskPageState extends State<ScoreTaskPage> {
       final List<int> selectedIds = _selectedUserIds.toList();
 
       if (selectedIds.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('กรุณาเลือกผู้เข้าร่วมอย่างน้อย 1 คน'),
-            backgroundColor: Colors.orange,
-          ),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.warning,
+          text: 'กรุณาเลือกผู้เข้าร่วมอย่างน้อย 1 คน',
         );
         return;
       }
@@ -89,33 +95,29 @@ class _ScoreTaskPageState extends State<ScoreTaskPage> {
         if (!mounted) return;
 
         if (response.statusCode == 200) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('บันทึกคะแนนสำเร็จ!'),
-              backgroundColor: Colors.green,
-            ),
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            title: 'สำเร็จ!',
+            text: 'บันทึกคะแนนเรียบร้อยแล้ว',
+            barrierDismissible: false,
+            onConfirmBtnTap: () {
+            Navigator.of(context, rootNavigator: true).pop(); 
+            Navigator.of(context).pop(); 
+          },
           );
-          Navigator.pop(context); // กลับไปหน้าก่อนหน้า
         } else {
-          // กรณี API ตอบกลับมาว่า Error
           final responseData = jsonDecode(response.body);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'เกิดข้อผิดพลาด: ${responseData['message'] ?? 'ไม่สามารถบันทึกได้'}',
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
+          throw Exception(responseData['message'] ?? 'ไม่สามารถบันทึกได้');
         }
       } catch (e) {
         // กรณีเชื่อมต่อไม่ได้
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('การเชื่อมต่อล้มเหลว: $e'),
-            backgroundColor: Colors.red,
-          ),
+       QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'เกิดข้อผิดพลาด',
+          text: e.toString(),
         );
       }
     }

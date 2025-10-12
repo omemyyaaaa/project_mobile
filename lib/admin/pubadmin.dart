@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/sdg_data.dart'; // ตรวจสอบว่า path ไปยังไฟล์ sdg_data.dart ถูกต้อง
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:quickalert/quickalert.dart';
 
 class PublicAdminPage extends StatefulWidget {
   const PublicAdminPage({super.key});
@@ -64,38 +65,36 @@ class _PublicAdminPageState extends State<PublicAdminPage> {
       // ใช้ http.patch เพื่อส่งคำขออัปเดตสถานะ
       final response = await http.patch(url);
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         // เมื่อบล็อกสำเร็จ ให้อัปเดต UI โดยการลบโพสต์นั้นออกจาก List ที่แสดงผล
         setState(() {
           posts.removeWhere((post) => post['post_id'] == postId);
         });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('บล็อกโพสต์สำเร็จแล้ว'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
+           QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'สำเร็จ',
+          text: 'บล็อกโพสต์สำเร็จแล้ว',
+          confirmBtnText: 'ตกลง ',
+        );
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('บล็อกโพสต์ไม่สำเร็จ (Code: ${response.statusCode})'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('เกิดข้อผิดพลาดในการเชื่อมต่อ: $e'),
-            backgroundColor: Colors.red,
-          ),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'เกิดข้อผิดพลาด',
+          text: 'บล็อกโพสต์ไม่สำเร็จ (Code: ${response.statusCode})',
         );
       }
+    } catch (e) {
+       if (!mounted) return;
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อผิดพลาด',
+        text: 'เกิดข้อผิดพลาด: $e',
+      );
     }
   }
 
@@ -126,6 +125,15 @@ class _PublicAdminPageState extends State<PublicAdminPage> {
         );
       },
     );
+  }
+
+  Color _getColorForSdg(int sdgNumber) {
+    try {
+      final sdg = sdgList.firstWhere((data) => data.number == sdgNumber);
+      return sdg.color;
+    } catch (e) {
+      return Colors.grey;
+    }
   }
 
   @override
@@ -176,194 +184,124 @@ class _PublicAdminPageState extends State<PublicAdminPage> {
   }
 
   Widget _buildPostCard(Map<String, dynamic> post) {
-    final String baseUrl = "http://10.0.2.2:3000";
-    final String profileUrl = post['profile_url'] != null ? baseUrl + post['profile_url'] : '';
+    // 1. ใช้ Key ที่ถูกต้องและสันนิษฐานว่า API ส่ง URL เต็มมาให้
+    final String profileUrl = post['profile_url'] ?? '';
     final String imageUrl = post['image_url'] ?? '';
-    final String taskName = post['tasks']?.toString() ?? 'กิจกรรม';
-    final List<int> sdgNumbers = (post['sdgs'] as List? ?? []).map((item) => int.tryParse(item.toString())).where((item) => item != null).cast<int>().toList();
-    final String dateString = post['uploaded_date'];
+    final String description = post['descript'] ?? 'ไม่มีคำอธิบาย';
+    final int postId = post['post_id'] ?? post['upload_id'] ?? 0;
+
+    // 2. ใช้ Key 'tasks' สำหรับ SDGs (เหมือนใน Publicpage)
+    final List<int> sdgNumbers = (post['tasks'] as List? ?? [])
+        .map((item) => int.tryParse(item.toString()))
+        .where((item) => item != null)
+        .cast<int>()
+        .toList();
+
+    // 3. ใช้ Key 'uploaded_date' สำหรับวันที่ (เหมือนใน Publicpage)
+    final String dateString = post['uploaded_date'] ?? DateTime.now().toIso8601String();
     final formattedDate = DateFormat('dd MMM yyyy', 'th_TH').format(DateTime.parse(dateString));
-    final postId = post['upload_id'];
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 3,
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            children: [
-              if (imageUrl.isNotEmpty)
-                Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  height: 300,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 300,
-                    color: Colors.grey[200],
-                    child: const Center(
-                        child: Icon(Icons.error, color: Colors.grey)),
-                  ),
-                )
-              else
-                Container(
-                  height: 300,
-                  width: double.infinity,
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: Icon(Icons.image_not_supported,
-                        color: Colors.grey, size: 50),
-                  ),
-                ),
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withOpacity(0.6),
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.8)
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                right: 12,
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.white,
-                      child: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: profileUrl.isNotEmpty
-                            ? NetworkImage(profileUrl)
-                            : null,
-                        child: profileUrl.isEmpty ? const Icon(Icons.person) : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            post['username'] ?? 'Anonymous',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(blurRadius: 2, color: Colors.black54)
-                                ]),
-                          ),
-                          Text(
-                            formattedDate,
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 12,
-                                shadows: const [
-                                  Shadow(blurRadius: 2, color: Colors.black54)
-                                ]),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.white.withOpacity(0.85),
-                  child: IconButton(
-                    icon:
-                        const Icon(Icons.block, color: Colors.red, size: 22),
-                    tooltip: 'Block Post',
-                    onPressed: () {
-                      _showBlockConfirmationDialog(postId);
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-            child: Text(
-              taskName,
-              style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87),
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundImage: profileUrl.isNotEmpty ? NetworkImage(profileUrl) : null,
+                  child: profileUrl.isEmpty ? const Icon(Icons.person) : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post['username'] ?? 'Anonymous',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        formattedDate,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.block, color: Colors.red),
+                  tooltip: 'Block Post',
+                  onPressed: () {
+                    if (postId != 0) {
+                      _showBlockConfirmationDialog(postId);
+                    }
+                  },
+                ),
+              ],
             ),
           ),
+          if (imageUrl.isNotEmpty)
+            Image.network(
+              imageUrl, // <-- ใช้ imageUrl ที่เป็น URL เต็มๆ โดยตรง
+              width: double.infinity,
+              fit: BoxFit.cover,
+              height: 250,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 250,
+                color: Colors.grey[200],
+                child: const Center(
+                  child: Icon(Icons.error, color: Colors.grey),
+                ),
+              ),
+            ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 16.0),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
-                    post['descript'] ?? 'ไม่มีคำอธิบาย',
+                    description,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontSize: 15, height: 1.4, color: Colors.grey[700]),
+                      fontSize: 15,
+                      height: 1.4,
+                      color: Colors.grey[800],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (sdgNumbers.isNotEmpty)
+                if (sdgNumbers.isNotEmpty) ...[
+                  const SizedBox(width: 16),
                   Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 6.0,
-                      runSpacing: 4.0,
-                      children: sdgNumbers.map((number) {
-                        final sdgInfo = sdgList.firstWhere(
-                          (sdg) => sdg.number == number,
-                          orElse: () => sdgList.first.copyWith(
-                              number: 0, title: 'Unknown'),
-                        );
-                        return Chip(
-                          avatar: CircleAvatar(
-                            backgroundColor: Colors.white,
-                            child: Text(
-                              '$number',
-                              style: TextStyle(
-                                color: sdgInfo.color,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              ),
-                            ),
+                    alignment: WrapAlignment.end,
+                    spacing: 6.0,
+                    runSpacing: 4.0,
+                    children: sdgNumbers.map((number) {
+                      return CircleAvatar(
+                        radius: 12,
+                        backgroundColor: _getColorForSdg(number),
+                        child: Text(
+                          '$number',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
                           ),
-                          label: Text(
-                            sdgInfo.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11,
-                            ),
-                          ),
-                          backgroundColor: sdgInfo.color,
-                          side: BorderSide.none,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20)),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
             ),
           ),

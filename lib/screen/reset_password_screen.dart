@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -49,21 +50,34 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('รีเซ็ตรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบอีกครั้ง')),
+         await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'สำเร็จ!',
+          text: 'รีเซ็ตรหัสผ่านเรียบร้อยแล้ว',
+          confirmBtnText: 'กลับไปหน้าเข้าสู่ระบบ',
+          barrierDismissible: false,
+          onConfirmBtnTap: () {
+            // ย้อนกลับไปหน้าแรกสุด (ซึ่งก็คือหน้า Login)
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
         );
-        // กลับไปหน้า login (อาจจะต้อง pop หลายครั้ง)
-        Navigator.of(context).popUntil((route) => route.isFirst);
       } else {
         final body = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาด: ${body['message']}')),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'ผิดพลาด',
+          text: body['message'] ?? 'เกิดข้อผิดพลาดที่ไม่รู้จัก',
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('การเชื่อมต่อล้มเหลว: $e')),
-      );
+      QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'การเชื่อมต่อล้มเหลว',
+          text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+        );
     } finally {
       if(mounted){
         setState(() {

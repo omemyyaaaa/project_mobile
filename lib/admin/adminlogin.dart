@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/homeamin.dart';
+import 'package:quickalert/quickalert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -23,8 +24,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     const adminPassword = "test1234";
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบถ้วน')),
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.warning,
+        title: 'ข้อมูลไม่ครบถ้วน',
+        text: 'กรุณากรอกอีเมลและรหัสผ่าน',
       );
       return;
     }
@@ -40,30 +44,44 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool("isAdmin", true);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('เข้าสู่ระบบ Admin สำเร็จ'),
-          backgroundColor: Colors.green,
-        ),
+      if (!mounted) return;
+
+      // ✅ 3. เปลี่ยน SnackBar เป็น QuickAlert สำหรับล็อกอินสำเร็จ
+      // และทำการนำทาง (Navigate) หลังจากผู้ใช้กดยืนยัน
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        title: 'สำเร็จ!',
+        text: 'เข้าสู่ระบบ Admin สำเร็จ',
+        barrierDismissible: false,
+        onConfirmBtnTap: () {
+          // ปิด Alert ก่อน
+          Navigator.of(context, rootNavigator: true).pop();
+          // จากนั้นค่อยไปหน้าถัดไป
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MyHomeadmin()),
+          );
+        },
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomeadmin()),
-      );
     } else {
       // login ไม่สำเร็จ
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('อีเมลหรือรหัสผ่านไม่ถูกต้อง'),
-          backgroundColor: Colors.red,
-        ),
+      if (!mounted) return;
+      // ✅ 4. เปลี่ยน SnackBar เป็น QuickAlert สำหรับข้อผิดพลาด
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'ผิดพลาด',
+        text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
       );
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override

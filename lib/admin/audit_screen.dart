@@ -4,6 +4,7 @@ import 'package:flutter_application_1/admin/homeamin.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:quickalert/quickalert.dart';
 
 class AuditScreen extends StatefulWidget {
   const AuditScreen({super.key});
@@ -30,7 +31,7 @@ class _AuditScreenState extends State<AuditScreen> {
     });
     try {
       final response = await http.get(
-        Uri.parse("http://10.153.27.172:3000/api/audit/all"),
+        Uri.parse("http://10.0.2.2:3000/api/audit/all"),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -46,126 +47,169 @@ class _AuditScreenState extends State<AuditScreen> {
     }
   }
 
+    Widget _buildTaskChips(dynamic tasksData) {
+    if (tasksData == null) {
+      return const SizedBox.shrink(); // ถ้าไม่มีข้อมูล ก็ไม่ต้องแสดงอะไรเลย
+    }
+
+    List<String> tasksList = [];
+
+    // ตรวจสอบว่าข้อมูลที่ได้มาเป็น List หรือไม่
+    if (tasksData is List) {
+      // ถ้าใช่ ก็แปลงแต่ละ item เป็น String
+      tasksList = tasksData.map((task) => task.toString()).toList();
+    } 
+    // ถ้าข้อมูลที่ได้มาเป็น String (เช่น "{1,13,15}")
+    else if (tasksData is String) {
+      // ทำความสะอาด String โดยการลบวงเล็บปีกกา แล้วค่อย split
+      tasksList = tasksData
+          .replaceAll('{', '')
+          .replaceAll('}', '')
+          .split(',')
+          .where((s) => s.trim().isNotEmpty) // กรองค่าว่างออก
+          .toList();
+    }
+
+    // ถ้าไม่มี task เลย ก็ไม่ต้องแสดงอะไร
+    if (tasksList.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // สร้าง Chip จาก List ที่ทำความสะอาดแล้ว
+    return Wrap(
+      spacing: 8.0,
+      runSpacing: 4.0,
+      children: tasksList.map((taskNumber) {
+        return Chip(
+          label: Text('SDGs ${taskNumber.trim()}'), // เพิ่มคำว่า "SDGs" เข้าไปข้างหน้า
+          backgroundColor: Colors.green[50],
+          labelStyle: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          side: BorderSide(color: Colors.green.shade200),
+        );
+      }).toList(),
+    );
+  }
+
   // 2. ฟังก์ชันแสดง Dialog ให้คะแนน
   Future<void> _showCompletionDialog(Map<String, dynamic> upload) async {
     final pointsController = TextEditingController();
+    final feedbackController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    // ✅ แก้ไข: ดึง upload_id ให้ถูกต้อง
     final uploadId = upload['upload_id'];
     final username = upload['username'];
 
-    // ป้องกันกรณีที่ uploadId เป็น null
     if (uploadId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('เกิดข้อผิดพลาด: ไม่พบ ID ของผลงาน'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          text: 'เกิดข้อผิดพลาด: ไม่พบ ID ของผลงาน');
       return;
     }
 
-    return showDialog<void>(
+    QuickAlert.show(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('อนุมัติและให้คะแนน'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ผลงานของ: $username',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+      type: QuickAlertType.custom,
+      barrierDismissible: true,
+      title: 'อนุมัติและให้คะแนน',
+      widget: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('ผลงานของ: $username',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: pointsController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'คะแนนที่จะให้',
+                prefixIcon: const Icon(Icons.star, color: Colors.amber),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: pointsController,
-                  keyboardType: TextInputType.number,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'คะแนนที่จะให้',
-                    prefixIcon: Icon(Icons.star, color: Colors.amber),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null ||
-                        value.isEmpty ||
-                        int.tryParse(value) == null) {
-                      return 'กรุณาใส่คะแนนเป็นตัวเลข';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('ยกเลิก'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            ElevatedButton(
-              child: const Text('ยืนยัน'),
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  // 3. เรียกฟังก์ชัน submit พร้อมส่ง uploadId และ points
-                  _submitCompletion(
-                    context,
-                    uploadId,
-                    int.parse(pointsController.text),
-                  );
+              ),
+              validator: (value) {
+                if (value == null ||
+                    value.isEmpty ||
+                    int.tryParse(value) == null) {
+                  return 'กรุณาใส่คะแนนเป็นตัวเลข';
                 }
+                return null;
               },
             ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: feedbackController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'ข้อเสนอแนะ (ไม่บังคับ)',
+                hintText: 'เช่น "ทำได้ดีมากครับ!"',
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                alignLabelWithHint: true,
+              ),
+            ),
           ],
-        );
+        ),
+      ),
+      showCancelBtn: true,
+      confirmBtnText: 'ยืนยัน',
+      cancelBtnText: 'ยกเลิก',
+      onConfirmBtnTap: () {
+        if (formKey.currentState!.validate()) {
+          // ปิด QuickAlert ก่อน แล้วค่อยส่งข้อมูล
+          Navigator.of(context, rootNavigator: true).pop();
+          _submitCompletion(
+            uploadId,
+            int.parse(pointsController.text),
+            feedbackController.text.trim(),
+          );
+        }
       },
     );
   }
 
   // 4. ฟังก์ชันส่งข้อมูลไป API เพื่อเปลี่ยนสถานะและให้คะแนน
   Future<void> _submitCompletion(
-    BuildContext dialogContext,
-    int uploadId,
-    int points,
-  ) async {
-    Navigator.of(dialogContext).pop();
-
+      int uploadId, int points, String feedback) async {
     try {
-      // เรียก Endpoint สำหรับ complete
       final url = Uri.parse(
-        "http://10.153.27.172:3000/api/audit/$uploadId/complete",
+        "http://10.0.2.2:3000/api/audit/$uploadId/complete",
       );
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'points': points}),
+        body: jsonEncode({
+          'points': points,
+          'feedback': feedback,
+        }),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ดำเนินการสำเร็จ!'),
-            backgroundColor: Colors.green,
-          ),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'สำเร็จ!',
+          text: 'อนุมัติผลงานและให้คะแนนเรียบร้อยแล้ว',
         );
-        // สำคัญ: เรียก fetchAllUploads() เพื่อรีเฟรชหน้าจอ
-        fetchAllUploads();
+        fetchAllUploads(); // รีเฟรชหน้าจอ
       } else {
         throw Exception('Failed to complete: ${response.body}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('เกิดข้อผิดพลาด: $e'),
-          backgroundColor: Colors.red,
-        ),
+      if (!mounted) return;
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถดำเนินการได้: $e',
       );
     }
   }
@@ -308,27 +352,12 @@ class _AuditScreenState extends State<AuditScreen> {
                 style: TextStyle(fontSize: 15, color: Colors.black87),
               ),
             ),
-          if (upload['tasks'] != null && upload['tasks'].toString().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: Wrap(
-                spacing: 8.0,
-                children: (upload['tasks'].toString())
-                    .split(',')
-                    .map(
-                      (task) => Chip(
-                        label: Text(task.trim()),
-                        backgroundColor: Colors.green[50],
-                        labelStyle: TextStyle(color: Colors.green[800]),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: Divider(),
+           Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: _buildTaskChips(upload['tasks']),
           ),
+
+          const Divider(height: 1, indent: 16, endIndent: 16),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: Center(

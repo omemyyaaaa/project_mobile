@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/pubadmin.dart';
+import 'package:flutter_application_1/sdg_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
@@ -46,7 +47,8 @@ class _HistoryPageState extends State<HistoryPage> {
         });
       } else {
         setState(() {
-          errorMessage = "ไม่สามารถโหลดข้อมูลได้ (Code: ${response.statusCode})";
+          errorMessage =
+              "ไม่สามารถโหลดข้อมูลได้ (Code: ${response.statusCode})";
         });
       }
     } catch (e) {
@@ -78,15 +80,12 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         );
         // ดึงข้อมูลใหม่เพื่อให้รายการที่โพสต์ไปแล้วหายไปจากหน้าจอ
-        fetchHistory(); 
+        fetchHistory();
       } else {
         final data = json.decode(response.body);
         final errorMsg = data['error'] ?? 'เกิดข้อผิดพลาดในการโพสต์';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -98,6 +97,61 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       );
     }
+  }
+
+  Color _getColorForSdg(int sdgNumber) {
+    try {
+      // ค้นหา SDGData ที่มี number ตรงกับ id ที่ต้องการ
+      final sdg = sdgList.firstWhere((data) => data.number == sdgNumber);
+      return sdg.color;
+    } catch (e) {
+      // ถ้าหาไม่เจอ (ซึ่งไม่น่าจะเกิด) ให้คืนค่าสีเทาไปก่อน
+      return Colors.grey;
+    }
+  }
+
+   Widget _buildSdgCircles(dynamic tasksData) {
+    if (tasksData == null) {
+      return const SizedBox.shrink();
+    }
+
+    List<int> taskIds = [];
+    if (tasksData is List) {
+      taskIds = tasksData.map((task) => int.tryParse(task.toString()) ?? 0).where((id) => id != 0).toList();
+    } else if (tasksData is String) {
+      taskIds = tasksData
+          .replaceAll('{', '')
+          .replaceAll('}', '')
+          .split(',')
+          .where((s) => s.trim().isNotEmpty)
+          .map((s) => int.tryParse(s.trim()) ?? 0)
+          .where((id) => id != 0)
+          .toList();
+    }
+
+    if (taskIds.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 6.0,
+      runSpacing: 4.0,
+      children: taskIds.map((id) {
+        return CircleAvatar(
+          radius: 12,
+          // ✅ 4. เรียกใช้ฟังก์ชันใหม่เพื่อดึงสี
+          backgroundColor: _getColorForSdg(id), 
+          child: Text(
+            id.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 
   @override
@@ -133,7 +187,7 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       );
     }
-    
+
     // ใช้ RefreshIndicator เพื่อให้ผู้ใช้ดึงข้อมูลใหม่ได้
     return RefreshIndicator(
       onRefresh: fetchHistory,
@@ -151,25 +205,29 @@ class _HistoryPageState extends State<HistoryPage> {
   // Widget สำหรับสร้าง Card ของแต่ละรายการ
   Widget _buildHistoryCard(Map<String, dynamic> item) {
     final String imageUrl = item['image_url']?.toString() ?? '';
-    final String description = item['descript']?.toString() ?? 'ไม่มีรายละเอียด';
-    final dynamic dateValue = item['uploaded_date'];
-    String formattedDate = 'ไม่ระบุวันที่';
+    final String description =
+        item['descript']?.toString() ?? 'ไม่มีรายละเอียด';
 
-    if (dateValue != null) {
-      DateTime? date;
-      if (dateValue is int) {
-        // กรณีเป็นตัวเลข (Timestamp) ให้แปลงเป็น DateTime
-        // สมมติว่าเป็น millisecond since epoch (มาตรฐานทั่วไป)
-        date = DateTime.fromMillisecondsSinceEpoch(dateValue);
-      } else if (dateValue is String) {
-        // กรณีเป็นข้อความ ให้ลอง parse เป็น DateTime
-        date = DateTime.tryParse(dateValue);
+    final int points =
+        int.tryParse(item['points_awarded']?.toString() ?? '0') ?? 0;
+    final String feedback = item['feedback']?.toString() ?? '';
+
+    String formattedDate;
+    final String? uploadedDateString = item['uploaded_date']?.toString();
+
+    if (uploadedDateString != null) {
+      // ใช้ tryParse เพื่อป้องกัน Error หากรูปแบบวันที่ไม่ถูกต้อง
+      final DateTime? parsedDate = DateTime.tryParse(uploadedDateString);
+      if (parsedDate != null) {
+        // ถ้าแปลงสำเร็จ ให้จัดรูปแบบเป็นภาษาไทย
+        formattedDate = DateFormat('dd MMMM yyyy', 'th_TH').format(parsedDate);
+      } else {
+        // ถ้าแปลงไม่สำเร็จ (เช่น รูปแบบวันที่ผิด)
+        formattedDate = 'รูปแบบวันที่ไม่ถูกต้อง';
       }
-      
-      if (date != null) {
-        // จัดรูปแบบวันที่เป็นภาษาไทย
-        formattedDate = DateFormat('dd MMMM yyyy', 'th_TH').format(date);
-      }
+    } else {
+      // ถ้าไม่มีข้อมูลวันที่เลย
+      formattedDate = 'ไม่ระบุวันที่';
     }
 
     return Card(
@@ -195,11 +253,15 @@ class _HistoryPageState extends State<HistoryPage> {
                 errorBuilder: (context, error, stackTrace) => Container(
                   height: 180,
                   color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    color: Colors.grey,
+                    size: 50,
+                  ),
                 ),
               ),
             ),
-          
+
           // แสดงรายละเอียด
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -208,12 +270,20 @@ class _HistoryPageState extends State<HistoryPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey[700]),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[700],
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'อัปโหลดเมื่อ: $formattedDate',
                       style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                     ),
+                                      
+                  const Spacer(), 
+
+                  _buildSdgCircles(item['tasks']),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -223,7 +293,68 @@ class _HistoryPageState extends State<HistoryPage> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
-                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber[700],
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$points คะแนน',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                if (feedback.isNotEmpty)
+                  Padding(
+                    // ใช้ Padding เพื่อเพิ่มระยะห่างด้านบน
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.feedback_outlined,
+                              size: 16,
+                              color:
+                                  Colors.grey[700], // ปรับสีให้เข้ากับส่วนอื่น
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ข้อเสนอแนะ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    Colors.black87, // ปรับสีให้เข้ากับส่วนอื่น
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 1),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 24.0,
+                          ), // เยื้องข้อความเข้ามาเล็กน้อย
+                          child: Text(
+                            feedback,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black.withOpacity(0.7),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -236,11 +367,14 @@ class _HistoryPageState extends State<HistoryPage> {
                           builder: (BuildContext dialogContext) {
                             return AlertDialog(
                               title: const Text('ยืนยันการโพสต์'),
-                              content: const Text('คุณต้องการเผยแพร่กิจกรรมนี้ใช่หรือไม่?'),
+                              content: const Text(
+                                'คุณต้องการเผยแพร่กิจกรรมนี้ใช่หรือไม่?',
+                              ),
                               actions: <Widget>[
                                 TextButton(
                                   child: const Text('ยกเลิก'),
-                                  onPressed: () => Navigator.of(dialogContext).pop(),
+                                  onPressed: () =>
+                                      Navigator.of(dialogContext).pop(),
                                 ),
                                 TextButton(
                                   child: const Text('ยืนยัน'),
@@ -266,12 +400,14 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     child: const Text(
                       'โพสต์',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
               ],
-
             ),
           ),
         ],

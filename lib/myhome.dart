@@ -533,21 +533,6 @@ class _MyHomeState extends State<MyHome> {
                 }
               },
             ),
-            _buildMenuItem(
-              icon: Icons.admin_panel_settings,
-              text: "Admin",
-              iconColor: const Color(0xFF2196F3),
-              onTap: () {
-                Navigator.of(context).pop(); // ปิด drawer ก่อน
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const AdminLoginScreen(), // นำทางไปยัง sdgbar.dart
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ),

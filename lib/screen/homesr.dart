@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/admin/adminlogin.dart';
 import 'package:flutter_application_1/screen/loginsr.dart';
 import 'package:flutter_application_1/screen/registersr.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -68,6 +69,19 @@ const HomeScreen({super.key});
               ),
             ),
             SizedBox(height: 20),
+            TextButton.icon(
+              icon: Icon(Icons.admin_panel_settings, color: Colors.grey[700]),
+              label: Text(
+                "สำหรับผู้ดูแลระบบ",
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminLoginScreen()),
+                );
+              },
+            ),
           ],
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
 
 class EditTaskScreen extends StatefulWidget {
   final Map<String, dynamic> taskData;
@@ -56,63 +57,56 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   }
 
   Future<void> _deleteTask() async {
-    // ปิด SnackBar เก่าๆ (ถ้ามี) ก่อนแสดงอันใหม่
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    // ใช้ context ที่ยังสมบูรณ์เพื่อสร้าง Navigator ที่ถูกต้อง
+    // การเก็บ navigator ไว้ในตัวแปรแบบนี้จะปลอดภัยกว่าการเรียกใช้ context
+    // หลังจาก await ในภายหลัง
+    final navigator = Navigator.of(context);
+
     try {
       final taskId = widget.taskData['task_id'];
       final url = Uri.parse("http://10.0.2.2:3000/api/tasks/$taskId");
       final response = await http.delete(url);
 
-      if (!mounted) return; // ตรวจสอบว่า widget ยังอยู่ใน tree
+      // ★ จุดสำคัญ: ตรวจสอบเสมอว่า widget ยังอยู่ในหน้าจอหรือไม่หลังจาก await
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ ลบภารกิจเรียบร้อย"), backgroundColor: Colors.green),
+        // รอให้ popup "สำเร็จ" แสดงและปิดตัวเองก่อน
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'สำเร็จ',
+          text: "ลบภารกิจเรียบร้อย",
+          confirmBtnText: 'ตกลง',
+          barrierDismissible: false,
         );
-        // ส่งค่า true กลับไป 2 ชั้น (ปิด dialog และ ปิดหน้า edit) เพื่อบอกให้หน้ารายการ refresh
-        Navigator.of(context).pop(true);
+        // หลังจาก popup ปิดแล้ว จึงค่อยสั่ง navigator ให้ออกจากหน้านี้
+        navigator.pop(true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ ลบไม่สำเร็จ [${response.statusCode}]"), backgroundColor: Colors.red),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'เกิดข้อผิดพลาด',
+          text: "ลบไม่สำเร็จ [${response.statusCode}]",
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ เกิดข้อผิดพลาดในการเชื่อมต่อ: $e"), backgroundColor: Colors.orange),
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อผิดพลาด',
+        text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: $e",
       );
     }
   }
 
-  void _showDeleteConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text("ยืนยันการลบ"),
-          content: const Text("คุณแน่ใจหรือไม่ว่าต้องการลบภารกิจนี้? การกระทำนี้ไม่สามารถย้อนกลับได้"),
-          actions: <Widget>[
-            TextButton(
-              child: const Text("ยกเลิก"),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // ปิดแค่กล่องโต้ตอบ
-              },
-            ),
-            TextButton(
-              child: const Text("ลบ", style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                 Navigator.of(dialogContext).pop(); // ปิดกล่องโต้ตอบก่อน
-                _deleteTask(); // แล้วค่อยเรียกฟังก์ชันลบ
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // 2. แทนที่ฟังก์ชัน _showDeleteConfirmationDialog() เดิมด้วยฟังก์ชันนี้
 
   Future<void> _pickImageFromGallery() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
+    // ตรวจสอบ mounted หลัง await
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _imageFile = File(picked.path));
     }
@@ -120,6 +114,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   Future<void> _pickImageFromCamera() async {
     final picked = await _picker.pickImage(source: ImageSource.camera);
+    // ตรวจสอบ mounted หลัง await
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _imageFile = File(picked.path));
     }
@@ -141,6 +137,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
         );
       },
     );
+    // ตรวจสอบ mounted หลัง await
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _selectedDate = picked);
     }
@@ -148,22 +146,27 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   Future<void> _updateTask() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // ✅ 1. เก็บ Navigator ไว้ในตัวแปร local ก่อน
+    final navigator = Navigator.of(context);
+
     try {
-      final taskId = widget.taskData['task_id']; // ใช้ `task_id` จาก backend
+      final taskId = widget.taskData['task_id'];
       var request = http.MultipartRequest(
         "PUT",
-        Uri.parse(
-          "http://10.0.2.2:3000/api/tasks/$taskId",
-        ), // <--- ลบ /edit ออก
+        Uri.parse("http://10.0.2.2:3000/api/tasks/$taskId"),
       );
 
+      // ... (ส่วนของ request.fields และ request.files เหมือนเดิม)
       request.fields["participants"] = _participantController.text;
       request.fields["activity_date"] = DateFormat(
         "yyyy-MM-dd",
       ).format(_selectedDate);
       request.fields["description"] = _descriptionController.text;
       request.fields["points"] = _pointsController.text;
-      request.fields["sdgs"] = _selectedSdgs.join(",");
+      request.fields["sdgs"] = _selectedSdgs
+          .map((s) => s.replaceAll('SDG', ''))
+          .join(",");
 
       if (_imageFile != null) {
         request.files.add(
@@ -172,23 +175,40 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       }
 
       var response = await request.send();
+
+      // ✅ 2. เช็ค mounted หลัง await
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("✅ แก้ไขภารกิจเรียบร้อย")));
-        Navigator.pop(context, true);
+        await QuickAlert.show(
+          // ใช้ await กับ QuickAlert ได้
+          context: context,
+          type: QuickAlertType.success,
+          title: 'สำเร็จ',
+          text: "แก้ไขภารกิจเรียบร้อย",
+          confirmBtnText: 'ตกลง',
+          barrierDismissible: false,
+        );
+        // ✅ 3. pop หลังจาก dialog ปิดแล้ว โดยใช้ navigator ที่เก็บไว้
+        navigator.pop(true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ แก้ไขไม่สำเร็จ [${response.statusCode}]")),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'เกิดข้อผิดพลาด',
+          text: "แก้ไขไม่สำเร็จ [${response.statusCode}]",
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("⚠️ เกิดข้อผิดพลาด: $e")));
+      if (!mounted) return;
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อผิดพลาด',
+        text: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: $e",
+      );
     }
   }
-  
 
   @override
   void dispose() {
@@ -215,7 +235,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.white),
             tooltip: 'ลบภารกิจ',
-            onPressed: _showDeleteConfirmationDialog, // กดแล้วให้แสดงกล่องยืนยัน
+            onPressed: _deleteTask, // กดแล้วให้แสดงกล่องยืนยัน
           ),
         ],
       ),

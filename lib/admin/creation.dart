@@ -4,6 +4,7 @@ import 'package:flutter_application_1/admin/homeamin.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
 
 class TaskCreationScreen extends StatefulWidget {
   @override
@@ -16,8 +17,9 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
   // 1. เพิ่ม TextEditingController สำหรับ title และ location
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _participantController =
-      TextEditingController(text: '');
+  final TextEditingController _participantController = TextEditingController(
+    text: '',
+  );
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _pointsController = TextEditingController();
 
@@ -60,6 +62,7 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
 
   Future<void> _saveTask() async {
     if (!_formKey.currentState!.validate()) return;
+    final navigator = Navigator.of(context);
     try {
       // 3. แก้ไข URL ของ API ให้ถูกต้องตามที่เราได้ทำไว้
       var request = http.MultipartRequest(
@@ -71,8 +74,9 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
       request.fields["title"] = _titleController.text;
       request.fields["location"] = _locationController.text;
       request.fields["participants"] = _participantController.text;
-      request.fields["activity_date"] =
-          DateFormat("yyyy-MM-dd").format(_selectedDate);
+      request.fields["activity_date"] = DateFormat(
+        "yyyy-MM-dd",
+      ).format(_selectedDate);
       request.fields["description"] = _descriptionController.text;
       request.fields["points"] = _pointsController.text;
       request.fields["sdgs"] = _selectedSdgs.join(",");
@@ -85,24 +89,51 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
 
       var response = await request.send();
       if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ บันทึกภารกิจเรียบร้อย")),
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'สำเร็จ!',
+          text: 'บันทึกภารกิจเรียบร้อย',
+          barrierDismissible: false,
+          confirmBtnText: 'ตกลง',
         );
-        Navigator.pushReplacement(
-          context,
+        navigator.pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => MyHomeadmin()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ บันทึกไม่สำเร็จ [${response.statusCode}]")),
+          (Route<dynamic> route) => false,
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ เกิดข้อผิดพลาด: $e")),
+      if (!mounted) return;
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อผิดพลาด',
+        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้: $e',
       );
     }
   }
+
+  void _showCancelConfirmationDialog() {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.warning,
+      title: 'ยืนยันการยกเลิก',
+      text: 'ข้อมูลที่กรอกไว้จะไม่ถูกบันทึก คุณต้องการดำเนินการต่อใช่หรือไม่?',
+      confirmBtnText: 'ยืนยัน',
+      cancelBtnText: 'ไม่',
+      showCancelBtn: true,
+      confirmBtnColor: Colors.red,
+      onConfirmBtnTap: () {
+        // ปิด QuickAlert ก่อน แล้วค่อยกลับไปหน้า Home
+        Navigator.of(context).pop();
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => MyHomeadmin()),
+            (route) => false,
+          );
+      }
+    );
+  }
+
 
   @override
   void dispose() {
@@ -179,7 +210,9 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                           onTap: _selectDate,
                           child: Container(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 15, vertical: 12),
+                              horizontal: 15,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(25),
@@ -188,10 +221,15 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(DateFormat('dd/MM/yyyy')
-                                    .format(_selectedDate)),
-                                Icon(Icons.calendar_today,
-                                    color: Colors.grey.shade600),
+                                Text(
+                                  DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(_selectedDate),
+                                ),
+                                Icon(
+                                  Icons.calendar_today,
+                                  color: Colors.grey.shade600,
+                                ),
                               ],
                             ),
                           ),
@@ -225,16 +263,21 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
               SizedBox(height: 16),
               Card(
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 2,
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("เลือกเป้าหมาย SDGs",
-                          style: TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold)),
+                      Text(
+                        "เลือกเป้าหมาย SDGs",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       SizedBox(height: 8),
                       _buildMultiSelectDropdown(),
                     ],
@@ -284,19 +327,26 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add_a_photo,
-                                size: 40, color: Colors.grey.shade600),
+                            Icon(
+                              Icons.add_a_photo,
+                              size: 40,
+                              color: Colors.grey.shade600,
+                            ),
                             SizedBox(height: 8),
-                            Text("เพิ่มรูปภาพ",
-                                style: TextStyle(color: Colors.grey.shade600)),
+                            Text(
+                              "เพิ่มรูปภาพ",
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
                           ],
                         )
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: Image.file(_imageFile!,
-                              width: double.infinity,
-                              height: 160,
-                              fit: BoxFit.cover),
+                          child: Image.file(
+                            _imageFile!,
+                            width: double.infinity,
+                            height: 160,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                 ),
               ),
@@ -310,9 +360,15 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                         MaterialPageRoute(builder: (context) => MyHomeadmin()),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          255,
+                          255,
+                          255,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25)),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                         padding: EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text("ยกเลิก"),
@@ -325,7 +381,8 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 48, 159, 87),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25)),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                         padding: EdgeInsets.symmetric(vertical: 14),
                       ),
                       child: Text("บันทึก"),
@@ -411,11 +468,14 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
           SizedBox(height: 8),
           child,
         ],

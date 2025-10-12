@@ -2,7 +2,8 @@ import 'dart:convert'; // สำหรับ jsonEncode, jsonDecode
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screen/reset_password_screen.dart';
 import 'package:http/http.dart' as http; // สำหรับเรียก API
-import 'package:pinput/pinput.dart'; // import หน้าที่สร้างขึ้นมาใหม่
+import 'package:pinput/pinput.dart';
+import 'package:quickalert/quickalert.dart'; // import หน้าที่สร้างขึ้นมาใหม่
 
 class ForgotpassScreen extends StatefulWidget {
   const ForgotpassScreen({super.key});
@@ -24,20 +25,20 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
 
   // --- แก้ไขฟังก์ชันนี้ ---
   Future<void> _sendOtp() async {
-    final email = emailController.text;
+    final email = emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกอีเมลให้ถูกต้อง')),
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.warning,
+        text: 'กรุณากรอกอีเมลให้ถูกต้อง',
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() { _isLoading = true; });
 
     try {
-      final url = Uri.parse('$_baseUrl/api/auth/request-otp'); // Endpoint ที่สร้างไว้
+      final url = Uri.parse('$_baseUrl/api/auth/request-otp');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -45,46 +46,60 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
       );
 
       if (!mounted) return;
+      final body = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        // --- กรณีส่ง OTP สำเร็จ ---
+        await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'ส่งสำเร็จ',
+          text: body['message'] ?? 'เราได้ส่งรหัส OTP ไปยังอีเมลของคุณแล้ว',
+          confirmBtnText: 'ตกลง',
+        );
         setState(() {
           _isOtpSent = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ส่ง OTP ไปที่ $email สำเร็จแล้ว')),
-        );
       } else {
-        final body = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาด: ${body['message']}')),
+        // --- กรณี Error จาก Server ---
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'ผิดพลาด',
+          text: body['message'] ?? 'เกิดข้อผิดพลาดที่ไม่รู้จัก',
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('การเชื่อมต่อล้มเหลว: $e')),
+      if (!mounted) return;
+      // --- กรณีเชื่อมต่อไม่ได้ ---
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อล้มเหลว',
+        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
       );
     } finally {
-       if (mounted) {
-         setState(() {
+      if (mounted) {
+        setState(() {
           _isLoading = false;
         });
-       }
+      }
     }
   }
 
-  // --- แก้ไขฟังก์ชันนี้ ---
+  // ✅ 3. แก้ไขฟังก์ชัน _verifyOtp ให้ใช้ QuickAlert
   Future<void> _verifyOtp() async {
     final otp = otpController.text;
     if (otp.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอก OTP ให้ครบ 6 หลัก')),
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.warning,
+        text: 'กรุณากรอก OTP ให้ครบ 6 หลัก',
       );
       return;
     }
     
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() { _isLoading = true; });
 
     try {
       final url = Uri.parse('$_baseUrl/api/auth/verify-otp');
@@ -97,29 +112,38 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        // ถ้า OTP ถูกต้อง ให้ไปหน้าตั้งรหัสผ่านใหม่
+        // --- กรณี OTP ถูกต้อง ---
+        // ไม่ต้องแสดง Dialog แค่นำทางไปหน้าถัดไปเลย
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ResetPasswordScreen(
               email: emailController.text,
-              otp: otp, // ส่ง OTP ไปด้วย
+              otp: otp,
             ),
           ),
         );
       } else {
-         final body = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('OTP ไม่ถูกต้อง: ${body['message']}')),
+        // --- กรณี OTP ผิด ---
+        final body = jsonDecode(response.body);
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'OTP ไม่ถูกต้อง',
+          text: body['message'] ?? 'กรุณาลองใหม่อีกครั้ง',
         );
       }
-
-    } catch(e) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('การเชื่อมต่อล้มเหลว: $e')),
+    } catch (e) {
+      if (!mounted) return;
+      // --- กรณีเชื่อมต่อไม่ได้ ---
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อล้มเหลว',
+        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
       );
     } finally {
-      if(mounted){
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });

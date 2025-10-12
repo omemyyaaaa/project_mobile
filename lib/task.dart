@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/sdg_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:quickalert/quickalert.dart';
 
 class UserTaskListPage extends StatefulWidget {
   final int sdgId;
@@ -32,23 +33,29 @@ class _UserTaskListPageState extends State<UserTaskListPage> {
   }
 
   Future<void> fetchTasksBySdg() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
     try {
-      // ✅ เรียก API endpoint ใหม่ที่กรองตาม SDG
-      final url = Uri.parse('http://10.0.2.2:3000/tasks/sdg/${widget.sdgId}');
+      final url = Uri.parse(
+        'http://10.0.2.2:3000/tasks/sdg/${widget.sdgId}?userId=${widget.userId}',
+      );
       final response = await http.get(url);
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final allTasks = data["tasks"] as List? ?? [];
-
-        // กรองเฉพาะภารกิจที่ยังไม่เริ่ม (เผื่อ API ส่งสถานะอื่นมาด้วย)
-        final relevantTasks = allTasks.where((task) {
-          final status = task['calculated_status'] as String?;
+        
+        // กรองเอาเฉพาะภารกิจที่ยังไม่เสร็จ (เผื่อ API ส่งมาเกิน)
+        final unfinishedTasks = (data["tasks"] as List? ?? []).where((task) {
+          final status = task['calculated_status'];
           return status != 'completed' && status != 'cancelled';
         }).toList();
 
         setState(() {
-          tasks = relevantTasks;
+          tasks = unfinishedTasks;
           isLoading = false;
         });
       } else {
@@ -58,80 +65,159 @@ class _UserTaskListPageState extends State<UserTaskListPage> {
         });
       }
     } catch (e) {
-      setState(() {
-        error = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          error = "เกิดข้อผิดพลาดในการเชื่อมต่อ: $e";
+          isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _joinTask(int taskId) async {
-    // 🚨🚨 แก้ไข URL ตรงนี้ให้เป็น /api/participation/join 🚨🚨
-    final url = Uri.parse('http://10.0.2.2:3000/api/participation/join');
 
-    // 💡 หากใช้ iOS Simulator หรือ Device จริง ให้เปลี่ยน 10.0.2.2 เป็น IP ของเครื่องคอมพิวเตอร์คุณ
-    //    เช่น final url = Uri.parse('http://192.168.1.xxx:3000/api/participation/join');
+  Future<void> _joinTask(int taskId, String taskTitle) async {
+  final url = Uri.parse('http://10.0.2.2:3000/tasks/join'); 
+
+  // เปลี่ยนมาใช้ QuickAlert เพื่อให้เหมือนกับฟังก์ชันอื่น
+  QuickAlert.show(
+    context: context,
+    type: QuickAlertType.loading,
+    text: 'กำลังเข้าร่วม...',
+    disableBackBtn: true,
+  );
+
+  try {
+    final response = await http
+        .post(
+          url,
+          headers: {'Content-Type': 'application/json; charset=UTF-8'},
+          body: jsonEncode({
+            'userId': widget.userId,
+            'taskId': taskId,
+          }),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    // ปิด Loading Alert
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    if (!mounted) return;
+
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 201) {
+      // ใช้ taskTitle ที่รับมาได้เลย
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        title: 'เข้าร่วมสำเร็จ!',
+        text: 'คุณได้เข้าร่วมภารกิจ "$taskTitle" เรียบร้อยแล้ว',
+      );
+      fetchTasksBySdg(); // รีเฟรชข้อมูล
+    } else {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'ผิดพลาด',
+        text: responseData['message'] ?? 'เกิดข้อผิดพลาดในการเข้าร่วม',
+      );
+    }
+  } catch (e) {
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    if (!mounted) return;
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.error,
+      title: 'การเชื่อมต่อล้มเหลว',
+      text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+    );
+  }
+}
+
+  void _showJoinConfirmationDialog(int taskId, String taskTitle) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.confirm,
+      title: 'ยืนยันการเข้าร่วม',
+      text: 'คุณต้องการเข้าร่วมภารกิจ "$taskTitle" ใช่หรือไม่?',
+      confirmBtnText: 'ยืนยัน',
+      cancelBtnText: 'ยกเลิก',
+      confirmBtnColor: Colors.green,
+      onConfirmBtnTap: () {
+        Navigator.of(context, rootNavigator: true).pop();
+        _joinTask(taskId, taskTitle);
+      },
+    );
+  }
+
+  Future<void> _cancelTask(int taskId, String taskTitle) async {
+    // 🚨🚨 ตรวจสอบ Endpoint ของคุณให้ถูกต้อง 🚨🚨
+    final url = Uri.parse('http://10.0.2.2:3000/tasks/cancel'); 
+
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.loading,
+      text: 'กำลังยกเลิก...',
+      disableBackBtn: true,
+    );
 
     try {
       final response = await http
-          .post(
+          .delete(
             url,
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
-            body: jsonEncode({
-              'userId': widget.userId, // ใช้ userId ที่รับมาจาก widget
-              'taskId': taskId,
-            }),
+            body: jsonEncode({'userId': widget.userId, 'taskId': taskId}),
           )
           .timeout(const Duration(seconds: 10));
 
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       if (!mounted) return;
 
       final responseData = jsonDecode(response.body);
-      final taskTitle = tasks.firstWhere(
-        (t) => t['task_id'] == taskId,
-      )['title'];
 
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('คุณเข้าร่วมภารกิจ "$taskTitle" สำเร็จแล้ว!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+      if (response.statusCode == 200) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'ยกเลิกสำเร็จ!',
+          text: 'คุณได้ยกเลิกการเข้าร่วมภารกิจ "$taskTitle" แล้ว',
         );
-        fetchTasksBySdg();
-      } else if (response.statusCode == 409) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              responseData['message'] ?? 'คุณได้เข้าร่วมภารกิจนี้แล้ว',
-            ),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        fetchTasksBySdg(); // รีเฟรชข้อมูล
       } else {
-        final errorMessage =
-            responseData['message'] ?? 'เกิดข้อผิดพลาดในการเข้าร่วมภารกิจ';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'ผิดพลาด',
+          text: responseData['message'] ?? 'เกิดข้อผิดพลาดในการยกเลิก',
         );
       }
     } catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('การเชื่อมต่อล้มเหลว (joinTask): $e'), // เพิ่ม context
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'การเชื่อมต่อล้มเหลว',
+        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
       );
     }
   }
+
+  void _showCancelConfirmationDialog(int taskId, String taskTitle) {
+    QuickAlert.show(
+      context: context,
+      type: QuickAlertType.confirm,
+      title: 'ยืนยันการยกเลิก',
+      text: 'คุณต้องการยกเลิกการเข้าร่วมภารกิจ "$taskTitle" ใช่หรือไม่?',
+      confirmBtnText: 'ใช่, ยกเลิก',
+      cancelBtnText: 'ไม่',
+      confirmBtnColor: Colors.red,
+      onConfirmBtnTap: () {
+        Navigator.of(context, rootNavigator: true).pop();
+        _cancelTask(taskId, taskTitle);
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -161,77 +247,87 @@ class _UserTaskListPageState extends State<UserTaskListPage> {
       );
     }
 
-    // UI ส่วนที่เหลือจะเหมือนกับหน้า Tasking ของผู้ใช้
-    return ListView.builder(
+     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
       itemCount: tasks.length,
       itemBuilder: (context, index) {
-        final task = tasks[index];
-        final status = task['calculated_status'] as String?;
-        List<int> sdgs = [];
-        if (task["sdgs"] != null && task["sdgs"] is List) {
-          sdgs = (task["sdgs"] as List)
-              .map((item) => int.tryParse(item.toString()) ?? 0)
-              .where((item) => item > 0)
-              .toList();
-        }
+        final task = tasks[index] as Map<String, dynamic>;
+        return _buildTaskCard(task);
+      },
+    );
+  }
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    // UI ส่วนที่เหลือจะเหมือนกับหน้า Tasking ของผู้ใช้
+   Widget _buildTaskCard(Map<String, dynamic> task) {
+    final bool isJoined = task['is_joined'] ?? false;
+    final status = task['calculated_status'] as String?;
+    final taskId = task["task_id"];
+    final taskTitle = task["title"] ?? "ไม่มีชื่อภารกิจ";
+
+    List<int> sdgs = [];
+    if (task["sdgs"] != null && task["sdgs"] is List) {
+      sdgs = (task["sdgs"] as List)
+          .map((item) => int.tryParse(item.toString()) ?? 0)
+          .where((item) => item > 0)
+          .toList();
+    }
+
+
+return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 160,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child:
-                    task["image"] != null && task["image"].toString().isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                          topRight: Radius.circular(16),
-                        ),
-                        child: Image.network(
-                          task["image"],
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: Colors.grey,
-                                size: 50,
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Center(
-                        child: Icon(
-                          Icons.eco,
-                          color: Colors.grey[600],
-                          size: 50,
-                        ),
-                      ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ... (ส่วนแสดงผลข้อมูลภารกิจเหมือนเดิม) ...
+          Container(
+            height: 160,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
+            ),
+                child: task["image"] != null && task["image"].toString().isNotEmpty
+                ? ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                    child: Image.network(
+                      task["image"],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                            size: 50,
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                : Center(
+                    child: Icon(
+                      Icons.eco,
+                      color: Colors.grey[600],
+                      size: 50,
+                    ),
+                  ),
+          ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -363,43 +459,63 @@ class _UserTaskListPageState extends State<UserTaskListPage> {
                       ],
                     ),
 
-                    if (status == 'upcoming')
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final taskId = task["task_id"];
-                            if (taskId != null) {
-                              _joinTask(taskId);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E7D32),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: const Text(
-                            'เข้าร่วมภารกิจ',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                   if (status == 'upcoming' || isJoined)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: isJoined
+                    // 🟢 ถ้าเข้าร่วมแล้ว (isJoined = true) -> แสดงปุ่ม "ยกเลิก"
+                    ? ElevatedButton.icon(
+                        icon: const Icon(Icons.cancel_outlined),
+                        label: const Text('ยกเลิกการเข้าร่วม'),
+                        onPressed: () {
+                          if (taskId != null) {
+                            _showCancelConfirmationDialog(taskId, taskTitle);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
                           ),
                         ),
-                      ),
+                      )
+                    // 🔴 ถ้ายังไม่เข้าร่วม (isJoined = false) และ status เป็น 'upcoming' -> แสดงปุ่ม "เข้าร่วม"
+                    : (status == 'upcoming'
+                        ? ElevatedButton.icon(
+                            icon: const Icon(Icons.add_task),
+                            label: const Text('เข้าร่วมภารกิจ'),
+                            onPressed: () {
+                              if (taskId != null) {
+                                _showJoinConfirmationDialog(taskId, taskTitle);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2E7D32),
+                              foregroundColor: Colors.white,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink()), // ถ้าไม่เข้าเงื่อนไข ไม่ต้องแสดงอะไรเลย
+              ),
+            ),
                   ],
                 ),
               ),
             ],
           ),
         );
-      },
-    );
-  }
-}
+    }
+      }
+
+
 
 Widget _buildDetailRow(IconData icon, String text) {
   return Row(

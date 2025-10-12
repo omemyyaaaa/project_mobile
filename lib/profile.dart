@@ -12,6 +12,7 @@ import 'dart:convert'; // สำหรับ json.decode
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart' show ImageSource, ImagePicker;
 import 'package:path_provider/path_provider.dart';
+import 'package:quickalert/quickalert.dart';
 
 class ProfilePage extends StatefulWidget {
   final int id; // ได้มาจากตอน Login
@@ -539,6 +540,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _saveProfile() async {
     // <-- เปลี่ยนเป็น async
     if (_formKey.currentState!.validate()) {
+
+      QuickAlert.show(
+      context: context,
+      type: QuickAlertType.loading,
+      title: 'กำลังบันทึก',
+      text: 'กรุณารอสักครู่...',
+      barrierDismissible: false,
+    );
+    
       // แสดง Loading Dialog
       showDialog(
         context: context,
@@ -560,24 +570,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
           body: json.encode(updatedData),
         );
 
+        final responseData = json.decode(response.body);
+
         Navigator.of(context).pop(); // ปิด Loading Dialog
 
         if (response.statusCode == 200) {
-          final responseData = json.decode(response.body);
-          // ส่งข้อมูลที่อัปเดตแล้วกลับไปหน้า ProfilePage
-          Navigator.pop(context, responseData['profile']);
-        } else {
-          // แสดงข้อความ Error หาก API ไม่สำเร็จ
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปเดตข้อมูล')),
-          );
-        }
+          await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: 'บันทึกสำเร็จ!',
+          text: 'ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว',
+          confirmBtnText: 'ตกลง',
+          barrierDismissible: false,
+          onConfirmBtnTap: () {
+            // ส่งข้อมูลที่อัปเดตแล้วกลับไปหน้า ProfilePage
+            // pop 2 ครั้ง: 1. ปิด QuickAlert, 2. ปิดหน้า EditProfilePage
+            Navigator.of(context).pop(); 
+            Navigator.of(context).pop(responseData['profile']);
+          }
+        );
+        }  else {
+        // --- กรณี Error จาก Server ---
+        // ✅ 3. ใช้ 'responseData' ในส่วนของ Error ด้วย
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'ผิดพลาด',
+          text: responseData['error'] ?? 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล',
+        );
+      }
       } catch (e) {
-        Navigator.of(context).pop(); // ปิด Loading Dialog
-        // แสดงข้อความ Error หากเชื่อมต่อไม่ได้
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('การเชื่อมต่อล้มเหลว: $e')));
+        Navigator.of(context).pop(); // <-- ปิด Dialog Loading กรณีเกิด Exception
+      if (!mounted) return;
+      // --- แสดง Dialog ผิดพลาด (เชื่อมต่อไม่ได้) ---
+      QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'การเชื่อมต่อล้มเหลว',
+          text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+        );
       }
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/admin/audit_screen.dart';
 import 'package:flutter_application_1/admin/completed.dart';
@@ -7,6 +9,7 @@ import 'package:flutter_application_1/admin/tasking.dart';
 import 'package:flutter_application_1/publicpage.dart';
 import 'package:flutter_application_1/screen/homesr.dart';
 import 'package:flutter_application_1/sidebar/calendar.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomeadmin extends StatefulWidget {
@@ -18,10 +21,16 @@ class MyHomeadmin extends StatefulWidget {
 
 class _MyHomeState extends State<MyHomeadmin> {
   int? userId; // เก็บ userId ที่ดึงจาก SharedPreferences
+  int? _upcomingTasksCount; // สำหรับเก็บจำนวนภารกิจ
+  bool _isLoadingTasks = true;
+  int? _completedTasksCount;
+  bool _isLoadingCompleted = true;
 
   @override
   void initState() {
     super.initState();
+        _fetchUpcomingTasksCount();
+    _fetchCompletedTasksCount();
   }
 
   @override
@@ -32,6 +41,64 @@ class _MyHomeState extends State<MyHomeadmin> {
       drawer: _buildDrawer(),
       body: _buildBody(),
     );
+  }
+
+  Future<void> _fetchCompletedTasksCount() async {
+    final url = Uri.parse('http://10.0.2.2:3000/tasks/status/completed');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        
+        // อัปเดต State ด้วยจำนวนที่ได้จาก key "count"
+        setState(() {
+          _completedTasksCount = data['count'];
+          _isLoadingCompleted = false;
+        });
+      } else {
+        setState(() {
+          _completedTasksCount = 0;
+          _isLoadingCompleted = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching completed tasks: $e");
+      setState(() {
+        _completedTasksCount = 0;
+        _isLoadingCompleted = false;
+      });
+    }
+  }
+
+  Future<void> _fetchUpcomingTasksCount() async {
+    // ใช้ 10.0.2.2 สำหรับ Android Emulator
+    final url = Uri.parse('http://10.0.2.2:3000/tasks/status/upcoming');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List tasks = data['tasks']; // เข้าถึง list ของ tasks
+
+        // อัปเดต State ด้วยจำนวนที่นับได้
+        setState(() {
+          _upcomingTasksCount = tasks.length;
+          _isLoadingTasks = false;
+        });
+      } else {
+        // กรณี Error
+        setState(() {
+          _upcomingTasksCount = 0;
+          _isLoadingTasks = false;
+        });
+      }
+    } catch (e) {
+      // กรณีเชื่อมต่อไม่ได้
+      print("Error fetching tasks: $e");
+      setState(() {
+        _upcomingTasksCount = 0;
+        _isLoadingTasks = false;
+      });
+    }
   }
 
   // App Bar with transparent background
@@ -183,18 +250,63 @@ class _MyHomeState extends State<MyHomeadmin> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildStatItem(
-          icon: Icons.flag,
-          iconColor: Colors.red,
-          number: "169",
-          label: "เป้าหมาย",
+        Column(
+          children: [
+            const Icon(Icons.flag, size: 40, color: Colors.red),
+            const SizedBox(height: 8),
+            _isLoadingTasks
+                ? const SizedBox(
+                    height: 24, // กำหนดความสูงให้เท่ากับ Text
+                    width: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  )
+                : Text(
+                    _upcomingTasksCount?.toString() ??
+                        '0', // แสดงจำนวนที่ได้จาก API
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+            // --- จบจุดที่เปลี่ยนแปลง ---
+            const Text(
+              "เป้าหมาย",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
         ),
-        _buildStatItem(
-          icon: Icons.upload,
-          iconColor: Colors.black,
-          number: "13",
-          label: "ทำแล้ว",
-        ),
+
+        // ส่วนของ "ทำแล้ว" ยังคงเหมือนเดิม
+        Column(
+        children: [
+          const Icon(Icons.upload, size: 40, color: Colors.black),
+          const SizedBox(height: 8),
+          
+          // --- จุดที่เปลี่ยนแปลง ---
+          // ถ้ากำลังโหลด ให้แสดง ProgressIndicator
+          // ถ้าโหลดเสร็จแล้ว ให้แสดงตัวเลข
+          _isLoadingCompleted
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                )
+              : Text(
+                  _completedTasksCount?.toString() ?? '0', // แสดงจำนวนที่ได้จาก API
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+          // --- จบจุดที่เปลี่ยนแปลง ---
+
+          const Text(
+            "ทำแล้ว",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
       ],
     );
   }

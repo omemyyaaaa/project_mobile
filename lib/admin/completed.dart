@@ -5,6 +5,7 @@ import 'package:flutter_application_1/admin/homeamin.dart';
 import 'package:flutter_application_1/admin/score_task_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:quickalert/quickalert.dart';
 
 class CompletedTasksPage extends StatefulWidget {
   const CompletedTasksPage({super.key});
@@ -27,7 +28,7 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
     if (mounted) setState(() => isLoading = true);
     try {
       // ✅ **Corrected the URL to match your API route (removed '/api')**
-      final response = await http.get(Uri.parse("http://10.153.27.172:3000/tasks/"));
+      final response = await http.get(Uri.parse("http://10.0.2.2:3000/tasks/"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -51,6 +52,13 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
     } catch (e) {
       print("❌ Error fetching finished tasks: $e");
       if (mounted) setState(() => isLoading = false);
+       QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถดึงข้อมูลภารกิจที่เสร็จสิ้นได้',
+        );
+      
     }
   }
 
